@@ -1,50 +1,3 @@
-<!-- CSS -->
-<link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
-
-<!-- JS -->
-<script src="https://cdn.jsdelivr.net/npm/@barba/core@2.10.3/dist/barba.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.17/dist/lenis.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/CustomEase.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/Observer.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/ScrollTrigger.min.js"></script>
-  <!-- Zenchef Widget SDK -->
-<script>
-  ;(function (d, s, id) {
-    const el = d.getElementsByTagName(s)[0]
-    if (d.getElementById(id) || el.parentNode == null) return
-    var js = d.createElement(s)
-    js.id = id
-    js.src = 'https://sdk.zenchef.com/v1/sdk.min.js'
-    el.parentNode.insertBefore(js, el)
-  })(document, 'script', 'zenchef-sdk')
-</script>
-<div class="zc-widget-config"
-   data-restaurant="371328"
-   data-open="2000"></div>
-<script>
-(function waitForZenchef() {
-  if (!window.ZC || !ZC.action || !ZC.action.open) {
-    setTimeout(waitForZenchef, 100);
-    return;
-  }
-
-  // Open bij page load met hash
-  if (window.location.hash === '#zc-action-open') {
-    ZC.action.open();
-  }
-
-  // Open bij klik op hash-links
-  document.addEventListener('click', function (e) {
-    const link = e.target.closest('a[href="#zc-action-open"]');
-    if (!link) return;
-
-    e.preventDefault();
-    ZC.action.open();
-  });
-})();
-</script>
-<script>
 // -----------------------------------------
 // OSMO PAGE TRANSITION + WEBFLOW IX2/IX3 + GSAP RE-INIT
 // -----------------------------------------
@@ -79,13 +32,10 @@ function initOnceFunctions() {
   initLenis();
   if (onceFunctionsInitialized) return;
   onceFunctionsInitialized = true;
-  // Runs once on first load
-  // if (has('[data-something]')) initSomething(document);
 }
 
 function initBeforeEnterFunctions(next) {
   nextPage = next || document;
-  // Runs before the enter animation
 }
 
 function initAfterEnterFunctions(next) {
@@ -99,8 +49,10 @@ function initAfterEnterFunctions(next) {
   if (document.querySelector('.navbar-link-large')) initNavbarLinkHover(document);
   if (next.querySelector('[data-route-origin]')) initRouteToBankoh(next);
 }
+
 // -----------------------------------------
 // PAGE TRANSITIONS (shutters)
+// -----------------------------------------
 function runPageOnceAnimation(next) {
   const tl = gsap.timeline();
   tl.call(() => resetPage(next), null, 0);
@@ -159,9 +111,6 @@ function runPageEnterAnimation(next) {
   const totalCoverDuration = transitionDuration + shutterStaggerAmount;
   tl.add("startEnter", totalCoverDuration);
 
-  // Re-init Webflow IX2/IX3 right before the new container becomes visible.
-  // Binds initial states inline before the first paint to prevent
-  // a flash of the end-state (e.g. header showing before its load animation).
   tl.call(reinitWebflow, null, "startEnter");
   tl.set(next, { autoAlpha: 1 }, "startEnter");
 
@@ -207,7 +156,6 @@ function generateShutters() {
 // BARBA HOOKS
 // -----------------------------------------
 barba.hooks.beforeEnter(data => {
-  // Sync Webflow page id so IX2/IX3 picks up the right page-scoped interactions
   const parsed = new DOMParser().parseFromString(data.next.html, "text/html");
   const wfPage = parsed.documentElement.getAttribute("data-wf-page");
   if (wfPage) document.documentElement.setAttribute("data-wf-page", wfPage);
@@ -266,7 +214,6 @@ function reinitWebflow() {
       if (ix3 && typeof ix3.init === "function") ix3.init();
     }
 
-    // Webflow's GSAP runtime listens for this to (re)scan the DOM
     document.dispatchEvent(new Event("readystatechange"));
   } catch (e) {
     console.warn("Webflow re-init failed:", e);
@@ -322,7 +269,7 @@ function initBarbaNavUpdate(data) {
 }
 
 // -----------------------------------------
-// THEME SECTION ON SCROLL (scoped to container)
+// THEME SECTION ON SCROLL
 // -----------------------------------------
 let _themeScrollCleanup = null;
 
@@ -377,6 +324,7 @@ function initCheckSectionThemeScroll(scope) {
 
 // -----------------------------------------
 // NAVBAR HIDE ON SCROLL
+// -----------------------------------------
 let _navbarST = null;
 
 function initNavbarHideOnScroll(scope) {
@@ -439,7 +387,6 @@ function initDraggableMarquee(scope) {
     const listWidth = list.scrollWidth || list.getBoundingClientRect().width;
     if (!wrapperWidth || !listWidth) return;
 
-    // Make enough duplicates to cover screen
     const minRequiredWidth = wrapperWidth + listWidth + 2;
     while (collection.scrollWidth < minRequiredWidth) {
       const listClone = list.cloneNode(true);
@@ -462,7 +409,6 @@ function initDraggableMarquee(scope) {
       },
     });
 
-    // Direction can be used for css + set initial direction on load
     const initialDirectionAttr = (wrapper.getAttribute("data-direction") || "left").toLowerCase();
     const baseDirection = initialDirectionAttr === "right" ? -1 : 1;
 
@@ -478,7 +424,6 @@ function initDraggableMarquee(scope) {
     }
     applyTimeScale();
 
-    // Drag observer
     const marqueeObserver = Observer.create({
       target: wrapper,
       type: "pointer,touch",
@@ -495,7 +440,6 @@ function initDraggableMarquee(scope) {
       }
     });
 
-    // Pause marquee when scrolled out of view
     ScrollTrigger.create({
       trigger: wrapper,
       start: "top bottom",
@@ -542,6 +486,7 @@ function initMiddelpuntScroll(scope) {
 
 // -----------------------------------------
 // NAVBAR LINK HOVER (gradient sweep)
+// -----------------------------------------
 function initNavbarLinkHover(scope) {
   scope = scope || document;
   const links = scope.querySelectorAll('.navbar-link-large');
@@ -571,8 +516,7 @@ function initNavbarLinkHover(scope) {
   });
 }
 
-
-  // -----------------------------------------
+// -----------------------------------------
 // ROUTE NAAR BANKOH
 // -----------------------------------------
 function initRouteToBankoh(scope) {
@@ -601,4 +545,3 @@ function initRouteToBankoh(scope) {
 
   button.dataset.routeInit = 'true';
 }
-</script>
