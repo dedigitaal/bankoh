@@ -571,6 +571,7 @@ function initRouteToBankoh(scope) {
 
   button.dataset.routeInit = 'true';
 }
+
 // -----------------------------------------
 // FAQ ACCORDION (Relume)
 // -----------------------------------------
@@ -610,6 +611,7 @@ function initFaqAccordion(scope) {
     item.dataset.faqInit = 'true';
   });
 }
+
 // -----------------------------------------
 // BANKOH LOGO REVEAL
 // -----------------------------------------
@@ -642,6 +644,6 @@ function initLogoReveal(scope) {
       delay: 0.2 + i * 0.1
     });
   });
+
   wrapper.dataset.logoInit = 'true';
 }
-
