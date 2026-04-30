@@ -645,3 +645,4 @@ function initLogoReveal(scope) {
 
   wrapper.dataset.logoInit = 'true';
 }
+
