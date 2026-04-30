@@ -1,4 +1,14 @@
-<!-- Zenchef Widget SDK -->
+<!-- CSS -->
+<link rel="stylesheet" href="https://unpkg.com/lenis@1.3.17/dist/lenis.css">
+
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/@barba/core@2.10.3/dist/barba.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.17/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/CustomEase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/Observer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15/dist/ScrollTrigger.min.js"></script>
+  <!-- Zenchef Widget SDK -->
 <script>
   ;(function (d, s, id) {
     const el = d.getElementsByTagName(s)[0]
