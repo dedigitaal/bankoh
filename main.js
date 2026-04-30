@@ -48,6 +48,7 @@ function initAfterEnterFunctions(next) {
   if (hasScrollTrigger) ScrollTrigger.refresh();
   if (document.querySelector('.navbar-link-large')) initNavbarLinkHover(document);
   if (next.querySelector('[data-route-origin]')) initRouteToBankoh(next);
+  if (next.querySelector('.faq3_accordion')) initFaqAccordion(next);
 }
 
 // -----------------------------------------
@@ -568,4 +569,43 @@ function initRouteToBankoh(scope) {
   });
 
   button.dataset.routeInit = 'true';
+}
+// -----------------------------------------
+// FAQ ACCORDION (Relume)
+// -----------------------------------------
+function initFaqAccordion(scope) {
+  scope = scope || document;
+  const items = scope.querySelectorAll('.faq3_accordion');
+
+  items.forEach(item => {
+    if (item.dataset.faqInit === 'true') return;
+    const question = item.querySelector('.faq3_question');
+    const answer = item.querySelector('.faq3_answer');
+    const icon = item.querySelector('.faq3_icon-wrapper');
+    if (!question || !answer) return;
+
+    gsap.set(answer, { height: 0, overflow: 'hidden' });
+    if (icon) gsap.set(icon, { rotation: 0 });
+    question.style.cursor = 'pointer';
+
+    let isOpen = false;
+
+    question.addEventListener('click', () => {
+      isOpen = !isOpen;
+      gsap.to(answer, {
+        height: isOpen ? 'auto' : 0,
+        duration: 0.5,
+        ease: isOpen ? 'power2.out' : 'power2.in'
+      });
+      if (icon) {
+        gsap.to(icon, {
+          rotation: isOpen ? 180 : 0,
+          duration: 0.5,
+          ease: isOpen ? 'power2.out' : 'power2.in'
+        });
+      }
+    });
+
+    item.dataset.faqInit = 'true';
+  });
 }
