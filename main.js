@@ -363,7 +363,7 @@ function initNavbarHideOnScroll(scope) {
 }
 
 // -----------------------------------------
-// DRAGGABLE MARQUEE
+// DRAGGABLE MARQUEE (scroll-driven direction)
 // -----------------------------------------
 function initDraggableMarquee(scope) {
   scope = scope || document;
@@ -380,8 +380,8 @@ function initDraggableMarquee(scope) {
     if (!collection || !list) return;
 
     const duration = getNumberAttr(wrapper, "data-duration", 20);
-    const multiplier = getNumberAttr(wrapper, "data-multiplier", 40);
-    const sensitivity = getNumberAttr(wrapper, "data-sensitivity", 0.01);
+    const multiplier = getNumberAttr(wrapper, "data-multiplier", 8);
+    const sensitivity = getNumberAttr(wrapper, "data-sensitivity", 0.004);
 
     const wrapperWidth = wrapper.getBoundingClientRect().width;
     const listWidth = list.scrollWidth || list.getBoundingClientRect().width;
@@ -403,51 +403,75 @@ function initDraggableMarquee(scope) {
       duration,
       ease: "none",
       repeat: -1,
-      onReverseComplete: () => marqueeLoop.progress(1),
       modifiers: {
         x: (x) => wrapX(parseFloat(x)) + "px"
-      },
+      }
     });
 
-    const initialDirectionAttr = (wrapper.getAttribute("data-direction") || "left").toLowerCase();
-    const baseDirection = initialDirectionAttr === "right" ? -1 : 1;
+    let scrollDirection = 1;
+    let dragInfluence = 0;
+    let currentTimeScale = 1;
+    let lastDirAttr = "left";
+    let isInView = true;
+    wrapper.setAttribute("data-direction", "left");
 
-    const timeScale = { value: 1 };
-    timeScale.value = baseDirection;
-    wrapper.setAttribute("data-direction", baseDirection < 0 ? "right" : "left");
+    const tickerFn = () => {
+      if (!wrapper.isConnected) {
+        gsap.ticker.remove(tickerFn);
+        if (cleanupScroll) cleanupScroll();
+        return;
+      }
+      if (Math.abs(dragInfluence) > 0.01) dragInfluence *= 0.92;
+      else dragInfluence = 0;
 
-    if (baseDirection < 0) marqueeLoop.progress(1);
+      const target = scrollDirection + dragInfluence;
+      currentTimeScale += (target - currentTimeScale) * 0.12;
+      marqueeLoop.timeScale(currentTimeScale);
 
-    function applyTimeScale() {
-      marqueeLoop.timeScale(timeScale.value);
-      wrapper.setAttribute("data-direction", timeScale.value < 0 ? "right" : "left");
-    }
-    applyTimeScale();
+      const dir = currentTimeScale < 0 ? "right" : "left";
+      if (dir !== lastDirAttr) {
+        wrapper.setAttribute("data-direction", dir);
+        lastDirAttr = dir;
+      }
+    };
+    gsap.ticker.add(tickerFn);
 
     const marqueeObserver = Observer.create({
       target: wrapper,
       type: "pointer,touch",
       preventDefault: true,
-      debounce: false,
-      onChangeX: (observerEvent) => {
-        let velocityTimeScale = observerEvent.velocityX * -sensitivity;
-        velocityTimeScale = gsap.utils.clamp(-multiplier, multiplier, velocityTimeScale);
-        gsap.killTweensOf(timeScale);
-        const restingDirection = velocityTimeScale < 0 ? -1 : 1;
-        gsap.timeline({ onUpdate: applyTimeScale })
-          .to(timeScale, { value: velocityTimeScale, duration: 0.1, overwrite: true })
-          .to(timeScale, { value: restingDirection, duration: 1.0 });
+      onChangeX: (e) => {
+        if (!isInView) return;
+        const velocity = e.velocityX * -sensitivity;
+        dragInfluence = gsap.utils.clamp(-multiplier, multiplier, velocity);
       }
     });
+
+    let lastScrollY = window.scrollY;
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollY;
+      if (Math.abs(delta) < 1) return;
+      scrollDirection = delta > 0 ? 1 : -1;
+      lastScrollY = currentY;
+    };
+    let cleanupScroll;
+    if (typeof lenis !== "undefined" && lenis && typeof lenis.on === "function") {
+      lenis.on("scroll", onScroll);
+      cleanupScroll = () => { try { lenis.off("scroll", onScroll); } catch(e){} };
+    } else {
+      window.addEventListener("scroll", onScroll, { passive: true });
+      cleanupScroll = () => window.removeEventListener("scroll", onScroll);
+    }
 
     ScrollTrigger.create({
       trigger: wrapper,
       start: "top bottom",
       end: "bottom top",
-      onEnter: () => { marqueeLoop.resume(); applyTimeScale(); marqueeObserver.enable(); },
-      onEnterBack: () => { marqueeLoop.resume(); applyTimeScale(); marqueeObserver.enable(); },
-      onLeave: () => { marqueeLoop.pause(); marqueeObserver.disable(); },
-      onLeaveBack: () => { marqueeLoop.pause(); marqueeObserver.disable(); }
+      onEnter:     () => { isInView = true;  marqueeLoop.resume(); marqueeObserver.enable(); },
+      onEnterBack: () => { isInView = true;  marqueeLoop.resume(); marqueeObserver.enable(); },
+      onLeave:     () => { isInView = false; marqueeLoop.pause();  marqueeObserver.disable(); },
+      onLeaveBack: () => { isInView = false; marqueeLoop.pause();  marqueeObserver.disable(); }
     });
 
     wrapper.setAttribute("data-draggable-marquee-init", "initialized");
