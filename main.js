@@ -49,6 +49,7 @@ function initAfterEnterFunctions(next) {
   if (document.querySelector('.navbar-link-large')) initNavbarLinkHover(document);
   if (next.querySelector('[data-route-origin]')) initRouteToBankoh(next);
   if (next.querySelector('.faq3_accordion')) initFaqAccordion(next);
+  if (next.querySelector('.bnackup')) initLogoReveal(next);
 }
 
 // -----------------------------------------
@@ -608,4 +609,39 @@ function initFaqAccordion(scope) {
 
     item.dataset.faqInit = 'true';
   });
+}
+// -----------------------------------------
+// BANKOH LOGO REVEAL
+// -----------------------------------------
+function initLogoReveal(scope) {
+  scope = scope || document;
+  const wrapper = scope.querySelector('.bnackup');
+  if (!wrapper || wrapper.dataset.logoInit === 'true') return;
+
+  const paths = wrapper.querySelectorAll('path[data-letter]');
+  if (!paths.length) return;
+
+  const grouped = {};
+  paths.forEach(p => {
+    const letter = p.dataset.letter;
+    (grouped[letter] = grouped[letter] || []).push(p);
+  });
+
+  const order = ['b', 'a', 'n', 'k', 'o', 'h'];
+  const letterGroups = order.map(l => grouped[l]).filter(Boolean);
+
+  letterGroups.forEach(g => gsap.set(g, { opacity: 0, y: 40, filter: 'blur(8px)' }));
+
+  letterGroups.forEach((g, i) => {
+    gsap.to(g, {
+      opacity: 1,
+      y: 0,
+      filter: 'blur(0px)',
+      duration: 0.8,
+      ease: 'power2.out',
+      delay: 0.2 + i * 0.1
+    });
+  });
+
+  wrapper.dataset.logoInit = 'true';
 }
