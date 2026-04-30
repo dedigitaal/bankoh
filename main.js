@@ -642,7 +642,6 @@ function initLogoReveal(scope) {
       delay: 0.2 + i * 0.1
     });
   });
-
   wrapper.dataset.logoInit = 'true';
 }
 
