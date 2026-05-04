@@ -658,8 +658,8 @@ function initHighlightText(scope) {
   targets.forEach((heading) => {
     if (heading.dataset.highlightInit === 'true') return;
 
-    const scrollStart = heading.getAttribute("data-highlight-scroll-start") || "top 90%";
-    const scrollEnd = heading.getAttribute("data-highlight-scroll-end") || "center 40%";
+    const scrollStart = heading.getAttribute("data-highlight-scroll-start") || "top 60%";
+    const scrollEnd = heading.getAttribute("data-highlight-scroll-end") || "bottom 40%";
     const fadedValue = parseFloat(heading.getAttribute("data-highlight-fade")) || 0.2;
     const staggerValue = parseFloat(heading.getAttribute("data-highlight-stagger")) || 0.1;
 
