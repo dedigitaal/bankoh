@@ -658,9 +658,9 @@ function initHighlightText(scope) {
   targets.forEach((heading) => {
     if (heading.dataset.highlightInit === 'true') return;
 
-    const scrollStart = heading.getAttribute("data-highlight-scroll-start") || "top 60%";
-    const scrollEnd = heading.getAttribute("data-highlight-scroll-end") || "bottom 40%";
-    const fadedValue = parseFloat(heading.getAttribute("data-highlight-fade")) || 0.2;
+    const scrollStart = heading.getAttribute("data-highlight-scroll-start") || "top 70%";
+    const scrollEnd = heading.getAttribute("data-highlight-scroll-end") || "bottom 30%";
+    const fadedValue = parseFloat(heading.getAttribute("data-highlight-fade")) || 0.1;
     const staggerValue = parseFloat(heading.getAttribute("data-highlight-stagger")) || 0.1;
 
     new SplitText(heading, {
