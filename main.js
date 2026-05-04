@@ -52,6 +52,7 @@ function initAfterEnterFunctions(next) {
   if (next.querySelector('.bnackup')) initLogoReveal(next);
   if (next.querySelector('[data-highlight-text]')) initHighlightText(next);
   if (next.querySelector('[data-parallax="trigger"]')) initGlobalParallax(next);
+  if (next.querySelector('[data-menu-slider]')) initMenuSliderAutoplay(next);
 }
 
 // -----------------------------------------
@@ -747,5 +748,35 @@ function initGlobalParallax(scope) {
         }
       );
     });
+  });
+}
+//slider op home
+function initMenuSliderAutoplay(scope) {
+  scope = scope || document;
+  const sliders = scope.querySelectorAll('[data-menu-slider]');
+
+  sliders.forEach(slider => {
+    if (slider.dataset.autoplayInit === 'true') return;
+    const nextBtn = slider.querySelector('.w-slider-arrow-right');
+    if (!nextBtn) return;
+
+    const speed = parseInt(slider.getAttribute('data-menu-slider-speed')) || 800;
+    let interval = null;
+
+    const start = () => {
+      if (interval) return;
+      interval = setInterval(() => nextBtn.click(), speed);
+    };
+    const stop = () => {
+      if (interval) clearInterval(interval);
+      interval = null;
+    };
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => entry.isIntersecting ? start() : stop());
+    }, { threshold: 0.1 });
+    observer.observe(slider);
+
+    slider.dataset.autoplayInit = 'true';
   });
 }
