@@ -51,6 +51,7 @@ function initAfterEnterFunctions(next) {
   if (next.querySelector('.faq3_accordion')) initFaqAccordion(next);
   if (next.querySelector('.bnackup')) initLogoReveal(next);
   if (next.querySelector('[data-highlight-text]')) initHighlightText(next);
+  if (next.querySelector('[data-parallax="trigger"]')) initGlobalParallax(next);
 }
 
 // -----------------------------------------
@@ -685,5 +686,66 @@ function initHighlightText(scope) {
     });
 
     heading.dataset.highlightInit = 'true';
+  });
+}
+// -----------------------------------------
+// GLOBAL PARALLAX
+// -----------------------------------------
+let _parallaxMM = null;
+
+function initGlobalParallax(scope) {
+  scope = scope || document;
+  if (_parallaxMM) { _parallaxMM.revert(); _parallaxMM = null; }
+
+  _parallaxMM = gsap.matchMedia();
+  _parallaxMM.add({
+    isMobile: "(max-width:479px)",
+    isMobileLandscape: "(max-width:767px)",
+    isTablet: "(max-width:991px)",
+    isDesktop: "(min-width:992px)"
+  }, (context) => {
+    const { isMobile, isMobileLandscape, isTablet } = context.conditions;
+
+    scope.querySelectorAll('[data-parallax="trigger"]').forEach((trigger) => {
+      const disable = trigger.getAttribute("data-parallax-disable");
+      if (
+        (disable === "mobile" && isMobile) ||
+        (disable === "mobileLandscape" && isMobileLandscape) ||
+        (disable === "tablet" && isTablet)
+      ) return;
+
+      const target = trigger.querySelector('[data-parallax="target"]') || trigger;
+      const direction = trigger.getAttribute("data-parallax-direction") || "vertical";
+      const prop = direction === "horizontal" ? "xPercent" : "yPercent";
+
+      const scrubAttr = trigger.getAttribute("data-parallax-scrub");
+      const scrub = scrubAttr ? parseFloat(scrubAttr) : true;
+
+      const startAttr = trigger.getAttribute("data-parallax-start");
+      const startVal = startAttr !== null ? parseFloat(startAttr) : 20;
+
+      const endAttr = trigger.getAttribute("data-parallax-end");
+      const endVal = endAttr !== null ? parseFloat(endAttr) : -20;
+
+      const scrollStartRaw = trigger.getAttribute("data-parallax-scroll-start") || "top bottom";
+      const scrollStart = `clamp(${scrollStartRaw})`;
+
+      const scrollEndRaw = trigger.getAttribute("data-parallax-scroll-end") || "bottom top";
+      const scrollEnd = `clamp(${scrollEndRaw})`;
+
+      gsap.fromTo(target,
+        { [prop]: startVal },
+        {
+          [prop]: endVal,
+          ease: "none",
+          scrollTrigger: {
+            trigger,
+            start: scrollStart,
+            end: scrollEnd,
+            scrub,
+          },
+        }
+      );
+    });
   });
 }
