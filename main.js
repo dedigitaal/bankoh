@@ -52,7 +52,6 @@ function initAfterEnterFunctions(next) {
   if (next.querySelector('.bnackup')) initLogoReveal(next);
   if (next.querySelector('[data-highlight-text]')) initHighlightText(next);
   if (next.querySelector('[data-parallax="trigger"]')) initGlobalParallax(next);
-  if (next.querySelector('[data-menu-slider]')) initMenuSliderAutoplay(next);
 }
 
 // -----------------------------------------
