@@ -4,7 +4,7 @@
 gsap.registerPlugin(CustomEase, ScrollTrigger, Observer, SplitText);
 history.scrollRestoration = "manual";
 
-let lenis = null;
+let lenis = null; 
 let nextPage = document;
 let onceFunctionsInitialized = false;
 
