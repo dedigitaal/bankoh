@@ -632,13 +632,12 @@ function initLogoReveal(scope) {
   const order = ['b', 'a', 'n', 'k', 'o', 'h'];
   const letterGroups = order.map(l => grouped[l]).filter(Boolean);
 
-  letterGroups.forEach(g => gsap.set(g, { opacity: 0, y: 40, filter: 'blur(8px)' }));
+  letterGroups.forEach(g => gsap.set(g, { opacity: 0, y: 150 }));
 
   letterGroups.forEach((g, i) => {
     gsap.to(g, {
       opacity: 1,
       y: 0,
-      filter: 'blur(0px)',
       duration: 0.8,
       ease: 'power2.out',
       delay: 0.2 + i * 0.1
