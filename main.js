@@ -1,7 +1,7 @@
 // -----------------------------------------
 // OSMO PAGE TRANSITION + WEBFLOW IX2/IX3 + GSAP RE-INIT
 // -----------------------------------------
-gsap.registerPlugin(CustomEase, ScrollTrigger, Observer);
+gsap.registerPlugin(CustomEase, ScrollTrigger, Observer, SplitText);
 history.scrollRestoration = "manual";
 
 let lenis = null;
@@ -50,6 +50,7 @@ function initAfterEnterFunctions(next) {
   if (next.querySelector('[data-route-origin]')) initRouteToBankoh(next);
   if (next.querySelector('.faq3_accordion')) initFaqAccordion(next);
   if (next.querySelector('.bnackup')) initLogoReveal(next);
+  if (next.querySelector('[data-highlight-text]')) initHighlightText(next);
 }
 
 // -----------------------------------------
@@ -645,49 +646,44 @@ function initLogoReveal(scope) {
   });
 
   wrapper.dataset.logoInit = 'true';
+}
 
 // -----------------------------------------
-// BANKOH about text
+// HIGHLIGHT TEXT ON SCROLL
 // -----------------------------------------
-  gsap.registerPlugin(ScrollTrigger, SplitText)
-  
-function initHighlightText(){
+function initHighlightText(scope) {
+  scope = scope || document;
+  const targets = scope.querySelectorAll("[data-highlight-text]");
 
-  let splitHeadingTargets = document.querySelectorAll("[data-highlight-text]")
-  splitHeadingTargets.forEach((heading) => {
-    
-    const scrollStart = heading.getAttribute("data-highlight-scroll-start") || "top 90%"
-    const scrollEnd = heading.getAttribute("data-highlight-scroll-end") || "center 40%"
-    const fadedValue = heading.getAttribute("data-highlight-fade") || 0.2 // Opacity of letter
-    const staggerValue =  heading.getAttribute("data-highlight-stagger") || 0.1 // Smoother reveal
-    
+  targets.forEach((heading) => {
+    if (heading.dataset.highlightInit === 'true') return;
+
+    const scrollStart = heading.getAttribute("data-highlight-scroll-start") || "top 90%";
+    const scrollEnd = heading.getAttribute("data-highlight-scroll-end") || "center 40%";
+    const fadedValue = parseFloat(heading.getAttribute("data-highlight-fade")) || 0.2;
+    const staggerValue = parseFloat(heading.getAttribute("data-highlight-stagger")) || 0.1;
+
     new SplitText(heading, {
       type: "words, chars",
       autoSplit: true,
       onSplit(self) {
-        let ctx = gsap.context(() => {
-          let tl = gsap.timeline({
+        return gsap.context(() => {
+          gsap.timeline({
             scrollTrigger: {
               scrub: true,
-              trigger: heading, 
+              trigger: heading,
               start: scrollStart,
               end: scrollEnd,
             }
-          })
-          tl.from(self.chars,{
+          }).from(self.chars, {
             autoAlpha: fadedValue,
             stagger: staggerValue,
             ease: "linear"
-          })
+          });
         });
-        return ctx; // return our animations so GSAP can clean them up when onSplit fires
       }
-    });    
-  });
-}
+    });
 
-// Initialize Highlight Text on Scroll
-document.addEventListener("DOMContentLoaded", () =>{
-  initHighlightText();
-});
+    heading.dataset.highlightInit = 'true';
+  });
 }
