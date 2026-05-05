@@ -336,32 +336,29 @@ function initNavbarHideOnScroll(scope) {
   const navbar = document.querySelector(".navbar");
   if (!navbar) return;
 
-  let lastScrollY = window.scrollY;
   let isHidden = false;
   gsap.set(navbar, { y: 0 });
+  const navHeight = navbar.offsetHeight;
 
   _navbarST = ScrollTrigger.create({
     start: 0,
     end: "max",
-    onUpdate: () => {
-      const currentScrollY = window.scrollY;
-      const scrollingDown = currentScrollY > lastScrollY;
-      const scrollDelta = Math.abs(currentScrollY - lastScrollY);
-      if (scrollDelta < 5) return;
+    onUpdate: (self) => {
+      const currentScrollY = self.scroll();
+      const direction = self.direction;
 
       if (currentScrollY < 50) {
         if (isHidden) {
           gsap.to(navbar, { y: 0, duration: 0.5, ease: "power3.out" });
           isHidden = false;
         }
-      } else if (scrollingDown && !isHidden) {
-        gsap.to(navbar, { y: "-5rem", duration: 0.5, ease: "power3.inOut" });
+      } else if (direction === 1 && !isHidden) {
+        gsap.to(navbar, { y: -navHeight, duration: 0.5, ease: "power3.inOut" });
         isHidden = true;
-      } else if (!scrollingDown && isHidden) {
+      } else if (direction === -1 && isHidden) {
         gsap.to(navbar, { y: 0, duration: 0.5, ease: "power3.out" });
         isHidden = false;
       }
-      lastScrollY = currentScrollY;
     },
   });
 }
