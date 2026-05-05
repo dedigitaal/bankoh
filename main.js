@@ -486,20 +486,19 @@ function initDraggableMarquee(scope) {
 // MIDDELPUNT SCROLL ANIMATION
 // -----------------------------------------
 let _middelpuntST = null;
-
 function initMiddelpuntScroll(scope) {
   scope = scope || document;
   if (_middelpuntST) { _middelpuntST.kill(); _middelpuntST = null; }
-
   const section = scope.querySelector('.section-middelpunt');
   if (!section) return;
   const image = section.querySelector('.middelpunt-image');
   if (!image) return;
 
-  gsap.set(image, { width: '0svw' });
+  const targetWidth = window.innerWidth <= 991 ? '16svw' : '12svw';
 
+  gsap.set(image, { width: '0svw' });
   const tween = gsap.to(image, {
-    width: '12svw',
+    width: targetWidth,
     ease: 'power2.out',
     scrollTrigger: {
       trigger: section,
@@ -508,7 +507,6 @@ function initMiddelpuntScroll(scope) {
       scrub: 0.8,
     }
   });
-
   _middelpuntST = tween.scrollTrigger;
 }
 
