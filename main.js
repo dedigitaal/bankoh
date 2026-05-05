@@ -337,6 +337,8 @@ function initNavbarHideOnScroll(scope) {
   if (!navbar) return;
 
   let isHidden = false;
+  let lastSwitchY = 0;
+  const threshold = 80;
   gsap.set(navbar, { y: 0 });
   const navHeight = navbar.offsetHeight;
 
@@ -345,19 +347,26 @@ function initNavbarHideOnScroll(scope) {
     end: "max",
     onUpdate: (self) => {
       const currentScrollY = self.scroll();
-      const direction = self.direction;
 
       if (currentScrollY < 50) {
         if (isHidden) {
           gsap.to(navbar, { y: 0, duration: 0.5, ease: "power3.out" });
           isHidden = false;
+          lastSwitchY = currentScrollY;
         }
-      } else if (direction === 1 && !isHidden) {
+        return;
+      }
+
+      const delta = currentScrollY - lastSwitchY;
+
+      if (!isHidden && delta > threshold) {
         gsap.to(navbar, { y: -navHeight, duration: 0.5, ease: "power3.inOut" });
         isHidden = true;
-      } else if (direction === -1 && isHidden) {
+        lastSwitchY = currentScrollY;
+      } else if (isHidden && delta < -threshold) {
         gsap.to(navbar, { y: 0, duration: 0.5, ease: "power3.out" });
         isHidden = false;
+        lastSwitchY = currentScrollY;
       }
     },
   });
