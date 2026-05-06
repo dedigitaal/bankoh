@@ -333,7 +333,7 @@ let _navbarST = null;
 
 function initNavbarHideOnScroll(scope) {
   if (_navbarST) { _navbarST.kill(); _navbarST = null; }
-  const navbar = document.querySelector(".navbar");
+  const navbar = (scope && scope.querySelector(".navbar")) || document.querySelector(".navbar");
   if (!navbar) return;
 
   let isHidden = false;
