@@ -87,11 +87,9 @@ function runPageLeaveAnimation(current, next) {
     ? transitionWrap.querySelector("[data-transition-dark]")
     : null;
   const tl = gsap.timeline({ onComplete: () => current.remove() });
-
   if (reducedMotion) {
     return tl.set(current, { autoAlpha: 0 });
   }
-
   if (transitionWrap) tl.set(transitionWrap, { zIndex: 2 }, 0);
   if (transitionDark) {
     tl.fromTo(transitionDark,
@@ -112,7 +110,6 @@ function runPageLeaveAnimation(current, next) {
 }
 function runPageEnterAnimation(next) {
   const tl = gsap.timeline();
-
   if (reducedMotion) {
     tl.call(reinitWebflow, null, 0);
     tl.set(next, { autoAlpha: 1 });
@@ -120,7 +117,6 @@ function runPageEnterAnimation(next) {
     tl.call(resetPage, [next], "pageReady");
     return new Promise(resolve => tl.call(resolve, null, "pageReady"));
   }
-
   tl.add("startEnter", 0);
   // next staat off-screen onderaan: bind IX2/IX3 hier, vóór hij in beeld schuift
   tl.set(next, { zIndex: 3, y: "100vh" }, "startEnter");
