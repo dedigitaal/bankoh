@@ -276,7 +276,9 @@ barba.hooks.beforeEnter(data => {
   gsap.set(data.next.container, { position: "fixed", top: 0, left: 0, right: 0 });
   if (lenis && typeof lenis.stop === "function") lenis.stop();
   initBeforeEnterFunctions(data.next.container);
-  applyThemeFrom(data.next.container);
+  const nextTheme = parsed.body.getAttribute("data-page-theme")
+                 || parsed.documentElement.getAttribute("data-page-theme");
+  applyThemeFrom(nextTheme);
 });
 barba.hooks.afterLeave(() => {
   if (hasScrollTrigger) ScrollTrigger.getAll().forEach(t => t.kill());
@@ -299,7 +301,9 @@ barba.init({
     async once(data) {
       initOnceFunctions();
       initAfterEnterFunctions(data.next.container);
-      initH1Reveal(data.next.container);   
+      initH1Reveal(data.next.container);
+      applyThemeFrom(document.body.getAttribute("data-page-theme")
+                  || document.documentElement.getAttribute("data-page-theme"));
       const tl = runPageOnceAnimation(data.next.container);
       if (hasLenis) { lenis.resize(); lenis.start(); }
       if (hasScrollTrigger) ScrollTrigger.refresh();
@@ -336,8 +340,8 @@ const themeConfig = {
   light: { nav: "dark", transition: "light" },
   dark:  { nav: "light", transition: "dark" }
 };
-function applyThemeFrom(container) {
-  const pageTheme = container?.dataset?.pageTheme || "light";
+function applyThemeFrom(pageTheme) {
+  pageTheme = pageTheme || "light";
   const config = themeConfig[pageTheme] || themeConfig.light;
   document.body.dataset.pageTheme = pageTheme;
   const transitionEl = document.querySelector('[data-theme-transition]');
