@@ -15,10 +15,8 @@ const has = (s) => !!nextPage.querySelector(s);
 const staggerDefault = 0.05;
 const durationDefault = 0.6;
 CustomEase.create("osmo", "0.625, 0.05, 0, 1");
+CustomEase.create("parallax", "0.7, 0.05, 0.13, 1");
 gsap.defaults({ ease: "osmo", duration: durationDefault });
-const shutterAmountConfig = { desktop: 10, tablet: 10, mobileLandscape: 10, mobile: 10 };
-const transitionDuration = 0.5;
-const shutterStaggerAmount = 0.3;
 // -----------------------------------------
 // FUNCTION REGISTRY
 // -----------------------------------------
@@ -48,7 +46,7 @@ function initAfterEnterFunctions(next) {
   if (next.querySelector('[data-read-time-article]')) initDisplayReadTime(next);
 }
 // -----------------------------------------
-// PAGE TRANSITIONS (shutters)
+// PAGE TRANSITIONS (parallax slide)
 // -----------------------------------------
 function runPageOnceAnimation(next) {
   const tl = gsap.timeline();
@@ -56,86 +54,59 @@ function runPageOnceAnimation(next) {
   return tl;
 }
 function runPageLeaveAnimation(current, next) {
-  generateShutters();
-  const transitionPanel = document.querySelector("[data-transition-panel]");
-  const allShutters = transitionPanel
-    ? transitionPanel.querySelectorAll("[data-transition-shutter]")
-    : [];
+  const transitionWrap = document.querySelector("[data-transition-wrap]");
+  const transitionDark = transitionWrap
+    ? transitionWrap.querySelector("[data-transition-dark]")
+    : null;
   const tl = gsap.timeline({ onComplete: () => current.remove() });
-  if (reducedMotion || !transitionPanel) {
+
+  if (reducedMotion || !transitionWrap) {
     return tl.set(current, { autoAlpha: 0 });
   }
-  tl.set(next, { autoAlpha: 0 }, 0);
-  tl.set(transitionPanel, { opacity: 1, pointerEvents: "none" }, 0);
-  tl.set(allShutters, {
-    scaleY: 1.02,
-    yPercent: 50,
-    clipPath: "polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)",
-  }, 0);
-  tl.to(allShutters, {
-    duration: transitionDuration,
-    ease: "power3.in",
-    yPercent: 0,
-    clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-    stagger: { amount: shutterStaggerAmount, from: "end" }
-  }, 0);
+
+  tl.set(transitionWrap, { zIndex: 2 }, 0);
+  if (transitionDark) {
+    tl.fromTo(transitionDark,
+      { autoAlpha: 0 },
+      { autoAlpha: 0.8, duration: 1.2, ease: "parallax" },
+      0
+    );
+  }
   tl.fromTo(current,
     { y: "0vh" },
-    { y: "-15vh", ease: "power3.in", duration: transitionDuration * 1.5 },
+    { y: "-25vh", duration: 1.2, ease: "parallax" },
     0
   );
+  if (transitionDark) {
+    tl.set(transitionDark, { autoAlpha: 0 });
+  }
   return tl;
 }
 function runPageEnterAnimation(next) {
-  const transitionPanel = document.querySelector("[data-transition-panel]");
-  const allShutters = transitionPanel
-    ? transitionPanel.querySelectorAll("[data-transition-shutter]")
-    : [];
+  const transitionWrap = document.querySelector("[data-transition-wrap]");
   const tl = gsap.timeline();
-  if (reducedMotion || !transitionPanel) {
+
+  if (reducedMotion || !transitionWrap) {
     tl.call(reinitWebflow, null, 0);
     tl.set(next, { autoAlpha: 1 });
     tl.add("pageReady");
     tl.call(resetPage, [next], "pageReady");
     return new Promise(resolve => tl.call(resolve, null, "pageReady"));
   }
-  const totalCoverDuration = transitionDuration + shutterStaggerAmount;
-  tl.add("startEnter", totalCoverDuration);
+
+  tl.add("startEnter", 0);
+  // next staat off-screen onderaan: bind IX2/IX3 hier, vóór hij in beeld schuift
+  tl.set(next, { zIndex: 3, y: "100vh" }, "startEnter");
   tl.call(reinitWebflow, null, "startEnter");
-  tl.set(next, { autoAlpha: 1 }, "startEnter");
-  tl.to(allShutters, {
-    duration: transitionDuration * 1.5,
-    ease: "expo.out",
-    clipPath: "polygon(0% 0%, 100% 0%, 100% -2%, 0% -2%)",
-    yPercent: -50,
-    stagger: { amount: shutterStaggerAmount, from: "end" },
-    overwrite: "auto",
+  tl.to(next, {
+    y: "0vh",
+    duration: 1.2,
+    clearProps: "all",
+    ease: "parallax"
   }, "startEnter");
   tl.add("pageReady");
   tl.call(resetPage, [next], "pageReady");
-  tl.from(next, {
-    ease: "expo.out",
-    y: "20vh",
-    duration: totalCoverDuration,
-  }, "startEnter");
   return new Promise(resolve => tl.call(resolve, null, "pageReady"));
-}
-function generateShutters() {
-  const panel = document.querySelector("[data-transition-panel]");
-  if (!panel) return;
-  const width = window.innerWidth;
-  const isLandscape = window.innerWidth > window.innerHeight;
-  let shutterAmount = shutterAmountConfig.desktop;
-  if (width <= 479) shutterAmount = shutterAmountConfig.mobile;
-  else if (width <= 767) shutterAmount = isLandscape ? shutterAmountConfig.mobileLandscape : shutterAmountConfig.mobile;
-  else if (width <= 991) shutterAmount = shutterAmountConfig.tablet;
-  const shutters = panel.querySelectorAll("[data-transition-shutter]");
-  if (shutters.length === shutterAmount) return;
-  const template = shutters[0];
-  if (!template) return;
-  const frag = document.createDocumentFragment();
-  for (let i = 0; i < shutterAmount; i++) frag.appendChild(template.cloneNode(true));
-  panel.replaceChildren(frag);
 }
 // -----------------------------------------
 // TABLE OF CONTENTS
