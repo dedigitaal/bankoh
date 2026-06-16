@@ -48,7 +48,7 @@ function initAfterEnterFunctions(next) {
 // -----------------------------------------
 // H1 PAGE REVEAL 
 // -----------------------------------------
-function initH1Reveal(scope) {
+function initH1Reveal(scope, delay = 0) {
   scope = scope || document;
   scope.querySelectorAll('.heading-style-h1').forEach(heading => {
     if (heading.dataset.h1RevealInit === 'true') return;
@@ -63,6 +63,7 @@ function initH1Reveal(scope) {
         duration: 0.5,
         ease: 'power4.out',
         stagger: 0.04,
+        delay,
         onComplete: () => split.revert()
       });
     };
@@ -121,7 +122,7 @@ function runPageEnterAnimation(next) {
   // next staat off-screen onderaan: bind IX2/IX3 hier, vóór hij in beeld schuift
   tl.set(next, { zIndex: 3, y: "100vh" }, "startEnter");
   tl.call(reinitWebflow, null, "startEnter");
-  tl.call(() => initH1Reveal(next), null, "startEnter"); 
+  tl.call(() => initH1Reveal(next, 1.2), null, "startEnter");
   tl.to(next, {
     y: "0vh",
     duration: 1.2,
