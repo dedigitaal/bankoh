@@ -3,28 +3,22 @@
 // -----------------------------------------
 gsap.registerPlugin(CustomEase, ScrollTrigger, Observer, SplitText);
 history.scrollRestoration = "manual";
-
 let lenis = null; 
 let nextPage = document;
 let onceFunctionsInitialized = false;
-
 const hasLenis = typeof window.Lenis !== "undefined";
 const hasScrollTrigger = typeof window.ScrollTrigger !== "undefined";
 const rmMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
 let reducedMotion = rmMQ.matches;
 rmMQ.addEventListener?.("change", e => (reducedMotion = e.matches));
-
 const has = (s) => !!nextPage.querySelector(s);
 const staggerDefault = 0.05;
 const durationDefault = 0.6;
-
 CustomEase.create("osmo", "0.625, 0.05, 0, 1");
 gsap.defaults({ ease: "osmo", duration: durationDefault });
-
 const shutterAmountConfig = { desktop: 10, tablet: 10, mobileLandscape: 10, mobile: 10 };
 const transitionDuration = 0.5;
 const shutterStaggerAmount = 0.3;
-
 // -----------------------------------------
 // FUNCTION REGISTRY
 // -----------------------------------------
@@ -33,11 +27,9 @@ function initOnceFunctions() {
   if (onceFunctionsInitialized) return;
   onceFunctionsInitialized = true;
 }
-
 function initBeforeEnterFunctions(next) {
   nextPage = next || document;
 }
-
 function initAfterEnterFunctions(next) {
   nextPage = next || document;
   initCheckSectionThemeScroll(next);
@@ -53,8 +45,8 @@ function initAfterEnterFunctions(next) {
   if (next.querySelector('[data-highlight-text]')) initHighlightText(next);
   if (next.querySelector('[data-parallax="trigger"]')) initGlobalParallax(next);
   if (next.querySelector('[data-toc-wrap]')) initTableOfContents(next);
+  if (next.querySelector('[data-read-time-article]')) initDisplayReadTime(next);
 }
-
 // -----------------------------------------
 // PAGE TRANSITIONS (shutters)
 // -----------------------------------------
@@ -63,7 +55,6 @@ function runPageOnceAnimation(next) {
   tl.call(() => resetPage(next), null, 0);
   return tl;
 }
-
 function runPageLeaveAnimation(current, next) {
   generateShutters();
   const transitionPanel = document.querySelector("[data-transition-panel]");
@@ -71,11 +62,9 @@ function runPageLeaveAnimation(current, next) {
     ? transitionPanel.querySelectorAll("[data-transition-shutter]")
     : [];
   const tl = gsap.timeline({ onComplete: () => current.remove() });
-
   if (reducedMotion || !transitionPanel) {
     return tl.set(current, { autoAlpha: 0 });
   }
-
   tl.set(next, { autoAlpha: 0 }, 0);
   tl.set(transitionPanel, { opacity: 1, pointerEvents: "none" }, 0);
   tl.set(allShutters, {
@@ -97,14 +86,12 @@ function runPageLeaveAnimation(current, next) {
   );
   return tl;
 }
-
 function runPageEnterAnimation(next) {
   const transitionPanel = document.querySelector("[data-transition-panel]");
   const allShutters = transitionPanel
     ? transitionPanel.querySelectorAll("[data-transition-shutter]")
     : [];
   const tl = gsap.timeline();
-
   if (reducedMotion || !transitionPanel) {
     tl.call(reinitWebflow, null, 0);
     tl.set(next, { autoAlpha: 1 });
@@ -112,13 +99,10 @@ function runPageEnterAnimation(next) {
     tl.call(resetPage, [next], "pageReady");
     return new Promise(resolve => tl.call(resolve, null, "pageReady"));
   }
-
   const totalCoverDuration = transitionDuration + shutterStaggerAmount;
   tl.add("startEnter", totalCoverDuration);
-
   tl.call(reinitWebflow, null, "startEnter");
   tl.set(next, { autoAlpha: 1 }, "startEnter");
-
   tl.to(allShutters, {
     duration: transitionDuration * 1.5,
     ease: "expo.out",
@@ -134,10 +118,8 @@ function runPageEnterAnimation(next) {
     y: "20vh",
     duration: totalCoverDuration,
   }, "startEnter");
-
   return new Promise(resolve => tl.call(resolve, null, "pageReady"));
 }
-
 function generateShutters() {
   const panel = document.querySelector("[data-transition-panel]");
   if (!panel) return;
@@ -147,7 +129,6 @@ function generateShutters() {
   if (width <= 479) shutterAmount = shutterAmountConfig.mobile;
   else if (width <= 767) shutterAmount = isLandscape ? shutterAmountConfig.mobileLandscape : shutterAmountConfig.mobile;
   else if (width <= 991) shutterAmount = shutterAmountConfig.tablet;
-
   const shutters = panel.querySelectorAll("[data-transition-shutter]");
   if (shutters.length === shutterAmount) return;
   const template = shutters[0];
@@ -156,39 +137,30 @@ function generateShutters() {
   for (let i = 0; i < shutterAmount; i++) frag.appendChild(template.cloneNode(true));
   panel.replaceChildren(frag);
 }
-
 // -----------------------------------------
 // TABLE OF CONTENTS
 // -----------------------------------------
-
 function initTableOfContents(scope) {
   scope = scope || document;
   scope.querySelectorAll('[data-toc-wrap]').forEach(root => {
     if (root.dataset.tocInit === 'true') return;
-
     const contentEl = root.querySelector('[data-toc-content]');
     const listEl = root.querySelector('[data-toc-list]');
     const templateLink = listEl?.querySelector('[data-toc-link]');
     if (!contentEl || !listEl || !templateLink) return;
-
     const levels = (root.getAttribute('data-toc-levels') || 'h2,h3').split(',').map(l => l.trim().toLowerCase()).filter(l => /^h[1-6]$/.test(l));
     const levelSelector = levels.join(', ');
     if (!levelSelector) return;
-
     const offset = parseInt(root.getAttribute('data-toc-offset')) || 50;
     const marker = '{skip}';
-
     const slugCounts = new Map();
-
     function slugify(text) {
       let slug = text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
       if (!slug) slug = 'section';
-
       const count = slugCounts.get(slug) || 0;
       slugCounts.set(slug, count + 1);
       return count === 0 ? slug : slug + '-' + (count + 1);
     }
-
     function stripMarker(el) {
       const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
       let node;
@@ -198,10 +170,8 @@ function initTableOfContents(scope) {
         }
       }
     }
-
     const allHeadings = Array.from(contentEl.querySelectorAll(levelSelector));
     const headings = [];
-
     allHeadings.forEach(heading => {
       if (heading.hasAttribute('data-toc-ignore')) return;
       if (heading.textContent.includes(marker)) {
@@ -212,44 +182,33 @@ function initTableOfContents(scope) {
       if (!text) return;
       headings.push(heading);
     });
-
     if (!headings.length) return;
-
     headings.forEach(heading => {
       if (!heading.id) {
         heading.id = slugify(heading.textContent.trim());
       }
     });
-
     const tocLinks = [];
-
     headings.forEach(heading => {
       const clone = templateLink.cloneNode(true);
       const textTarget = clone.querySelector('[data-toc-text]') || clone;
       textTarget.textContent = heading.textContent.trim();
-
       clone.href = '#' + heading.id;
       clone.removeAttribute('data-toc-link');
       clone.setAttribute('data-toc-item', '');
-
       const level = heading.tagName.charAt(1);
       clone.setAttribute('data-toc-depth', level);
-
       listEl.appendChild(clone);
       tocLinks.push(clone);
     });
-
     listEl.querySelectorAll('[data-toc-link]').forEach(el => el.remove());
-
     if (typeof ScrollTrigger !== 'undefined') {
       function setActive(index) {
         tocLinks.forEach(link => link.setAttribute('data-toc-status', ''));
         if (tocLinks[index]) tocLinks[index].setAttribute('data-toc-status', 'active');
       }
-
       headings.forEach((heading, i) => {
         const nextHeading = headings[i + 1];
-
         ScrollTrigger.create({
           trigger: heading,
           start: 'top ' + (offset + 1) + 'px',
@@ -260,22 +219,22 @@ function initTableOfContents(scope) {
           }
         });
       });
-
       if (window.scrollY <= headings[0].getBoundingClientRect().top + window.scrollY - offset) {
         setActive(0);
       }
+      // Webfonts/afbeeldingen verschuiven heading-posities na init: herbereken zodra fonts klaar zijn
+      if (document.fonts?.ready) {
+        document.fonts.ready.then(() => ScrollTrigger.refresh());
+      }
     }
-
     listEl.addEventListener('click', e => {
       const link = e.target.closest('[data-toc-item]');
       if (!link) return;
       e.preventDefault();
       e.stopPropagation();
-
       const id = link.getAttribute('href')?.slice(1);
       const target = document.getElementById(id);
       if (!target) return;
-
       if (typeof lenis !== 'undefined' && typeof lenis.scrollTo === 'function') {
         lenis.scrollTo(target, { offset: -offset });
       } else {
@@ -283,11 +242,35 @@ function initTableOfContents(scope) {
         window.scrollTo({ top: y, behavior: 'smooth' });
       }
     });
-
     root.dataset.tocInit = 'true';
   });
 }
-
+// -----------------------------------------
+// DISPLAY READ TIME
+// -----------------------------------------
+function initDisplayReadTime(scope) {
+  scope = scope || document;
+  const wordsPerMinute = 200;
+  const articles = scope.querySelectorAll('[data-read-time-article]');
+  articles.forEach((article, index) => {
+    if (article.dataset.readTimeInit === 'true') return;
+    const matchValue = article.getAttribute('data-read-time-article');
+    const text = article.textContent.trim();
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    const minutes = Math.max(1, Math.ceil(wordCount / wordsPerMinute));
+    let targets;
+    if (matchValue) {
+      targets = scope.querySelectorAll(`[data-read-time-target="${matchValue}"]`);
+    } else {
+      const emptyTargets = scope.querySelectorAll('[data-read-time-target=""], [data-read-time-target]:not([data-read-time-target*="-"])');
+      targets = emptyTargets[index] ? [emptyTargets[index]] : [];
+    }
+    targets.forEach((target) => {
+      target.textContent = `${minutes}`;
+    });
+    article.dataset.readTimeInit = 'true';
+  });
+}
 // -----------------------------------------
 // BARBA HOOKS
 // -----------------------------------------
@@ -295,27 +278,22 @@ barba.hooks.beforeEnter(data => {
   const parsed = new DOMParser().parseFromString(data.next.html, "text/html");
   const wfPage = parsed.documentElement.getAttribute("data-wf-page");
   if (wfPage) document.documentElement.setAttribute("data-wf-page", wfPage);
-
   gsap.set(data.next.container, { position: "fixed", top: 0, left: 0, right: 0 });
   if (lenis && typeof lenis.stop === "function") lenis.stop();
   initBeforeEnterFunctions(data.next.container);
   applyThemeFrom(data.next.container);
 });
-
 barba.hooks.afterLeave(() => {
   if (hasScrollTrigger) ScrollTrigger.getAll().forEach(t => t.kill());
 });
-
 barba.hooks.enter(data => {
   initBarbaNavUpdate(data);
 });
-
 barba.hooks.afterEnter(data => {
   initAfterEnterFunctions(data.next.container);
   if (hasLenis) { lenis.resize(); lenis.start(); }
   if (hasScrollTrigger) ScrollTrigger.refresh();
 });
-
 barba.init({
   debug: true,
   timeout: 7000,
@@ -326,13 +304,15 @@ barba.init({
     async once(data) {
       initOnceFunctions();
       initAfterEnterFunctions(data.next.container);
-      return runPageOnceAnimation(data.next.container);
+      const tl = runPageOnceAnimation(data.next.container);
+      if (hasLenis) { lenis.resize(); lenis.start(); }
+      if (hasScrollTrigger) ScrollTrigger.refresh();
+      return tl;
     },
     async leave(data) { return runPageLeaveAnimation(data.current.container, data.next.container); },
     async enter(data) { return runPageEnterAnimation(data.next.container); }
   }]
 });
-
 // -----------------------------------------
 // WEBFLOW IX2 + IX3 RE-INIT
 // -----------------------------------------
@@ -341,7 +321,6 @@ function reinitWebflow() {
   try {
     window.Webflow.destroy();
     window.Webflow.ready();
-
     const req = window.Webflow.require;
     if (req) {
       const ix2 = req("ix2");
@@ -349,13 +328,11 @@ function reinitWebflow() {
       const ix3 = req("ix3");
       if (ix3 && typeof ix3.init === "function") ix3.init();
     }
-
     document.dispatchEvent(new Event("readystatechange"));
   } catch (e) {
     console.warn("Webflow re-init failed:", e);
   }
 }
-
 // -----------------------------------------
 // HELPERS
 // -----------------------------------------
@@ -363,7 +340,6 @@ const themeConfig = {
   light: { nav: "dark", transition: "light" },
   dark:  { nav: "light", transition: "dark" }
 };
-
 function applyThemeFrom(container) {
   const pageTheme = container?.dataset?.pageTheme || "light";
   const config = themeConfig[pageTheme] || themeConfig.light;
@@ -373,7 +349,6 @@ function applyThemeFrom(container) {
   const nav = document.querySelector('[data-theme-nav]');
   if (nav) nav.dataset.themeNav = config.nav;
 }
-
 function initLenis() {
   if (lenis) return;
   if (!hasLenis) return;
@@ -382,13 +357,11 @@ function initLenis() {
   gsap.ticker.add(time => lenis.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
 }
-
 function resetPage(container) {
   window.scrollTo(0, 0);
   gsap.set(container, { clearProps: "position,top,left,right" });
   if (hasLenis) { lenis.resize(); lenis.start(); }
 }
-
 function initBarbaNavUpdate(data) {
   const tpl = document.createElement("template");
   tpl.innerHTML = data.next.html.trim();
@@ -403,28 +376,23 @@ function initBarbaNavUpdate(data) {
     curr.setAttribute("class", next.getAttribute("class") || "");
   });
 }
-
 // -----------------------------------------
 // THEME SECTION ON SCROLL
 // -----------------------------------------
 let _themeScrollCleanup = null;
-
 function initCheckSectionThemeScroll(scope) {
   if (_themeScrollCleanup) _themeScrollCleanup();
   let ticking = false;
   let currentTheme = null;
   let currentBg = null;
-
   const navBarHeight = document.querySelector('[data-nav-bar-height]');
   const themeObserverOffset = navBarHeight ? navBarHeight.offsetHeight / 2 : 0;
   const themeSections = scope.querySelectorAll('[data-theme-section]');
   const themeNavElements = document.querySelectorAll('[data-theme-nav]');
   const bgNavElements = document.querySelectorAll('[data-bg-nav]');
-
   function updateElements(elements, attribute, value) {
     elements.forEach(el => el.setAttribute(attribute, value));
   }
-
   function checkThemeSection() {
     for (const section of themeSections) {
       const rect = section.getBoundingClientRect();
@@ -444,41 +412,34 @@ function initCheckSectionThemeScroll(scope) {
     }
     ticking = false;
   }
-
   const onScroll = () => {
     if (!ticking) { ticking = true; requestAnimationFrame(checkThemeSection); }
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
   checkThemeSection();
-
   _themeScrollCleanup = () => {
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
   };
 }
-
 // -----------------------------------------
 // NAVBAR HIDE ON SCROLL
 // -----------------------------------------
 let _navbarST = null;
-
 function initNavbarHideOnScroll(scope) {
   if (_navbarST) { _navbarST.kill(); _navbarST = null; }
   const navbar = (scope && scope.querySelector(".navbar")) || document.querySelector(".navbar");
   if (!navbar) return;
-
   let isHidden = false;
   gsap.set(navbar, { y: 0 });
   const navHeight = navbar.offsetHeight;
-
   _navbarST = ScrollTrigger.create({
     start: 0,
     end: "max",
     onUpdate: (self) => {
       const currentScrollY = self.scroll();
       const velocity = self.getVelocity();
-
       if (currentScrollY < 50) {
         if (isHidden) {
           gsap.to(navbar, { y: 0, duration: 0.5, ease: "power3.out" });
@@ -486,9 +447,7 @@ function initNavbarHideOnScroll(scope) {
         }
         return;
       }
-
       if (Math.abs(velocity) < 100) return;
-
       if (velocity > 0 && !isHidden) {
         gsap.to(navbar, { y: -navHeight, duration: 0.5, ease: "power3.inOut" });
         isHidden = true;
@@ -499,7 +458,6 @@ function initNavbarHideOnScroll(scope) {
     },
   });
 }
-
 // -----------------------------------------
 // DRAGGABLE MARQUEE (scroll-driven direction)
 // -----------------------------------------
@@ -510,21 +468,17 @@ function initDraggableMarquee(scope) {
     const value = parseFloat(el.getAttribute(name));
     return Number.isFinite(value) ? value : fallback;
   };
-
   wrappers.forEach((wrapper) => {
     if (wrapper.getAttribute("data-draggable-marquee-init") === "initialized") return;
     const collection = wrapper.querySelector("[data-draggable-marquee-collection]");
     const list = wrapper.querySelector("[data-draggable-marquee-list]");
     if (!collection || !list) return;
-
     const duration = getNumberAttr(wrapper, "data-duration", 20);
     const multiplier = getNumberAttr(wrapper, "data-multiplier", 8);
     const sensitivity = getNumberAttr(wrapper, "data-sensitivity", 0.004);
-
     const wrapperWidth = wrapper.getBoundingClientRect().width;
     const listWidth = list.scrollWidth || list.getBoundingClientRect().width;
     if (!wrapperWidth || !listWidth) return;
-
     const minRequiredWidth = wrapperWidth + listWidth + 2;
     while (collection.scrollWidth < minRequiredWidth) {
       const listClone = list.cloneNode(true);
@@ -532,10 +486,8 @@ function initDraggableMarquee(scope) {
       listClone.setAttribute("aria-hidden", "true");
       collection.appendChild(listClone);
     }
-
     const wrapX = gsap.utils.wrap(-listWidth, 0);
     gsap.set(collection, { x: 0 });
-
     const marqueeLoop = gsap.to(collection, {
       x: -listWidth,
       duration,
@@ -545,14 +497,12 @@ function initDraggableMarquee(scope) {
         x: (x) => wrapX(parseFloat(x)) + "px"
       }
     });
-
     let scrollDirection = 1;
     let dragInfluence = 0;
     let currentTimeScale = 1;
     let lastDirAttr = "left";
     let isInView = true;
     wrapper.setAttribute("data-direction", "left");
-
     const tickerFn = () => {
       if (!wrapper.isConnected) {
         gsap.ticker.remove(tickerFn);
@@ -561,11 +511,9 @@ function initDraggableMarquee(scope) {
       }
       if (Math.abs(dragInfluence) > 0.01) dragInfluence *= 0.92;
       else dragInfluence = 0;
-
       const target = scrollDirection + dragInfluence;
       currentTimeScale += (target - currentTimeScale) * 0.12;
       marqueeLoop.timeScale(currentTimeScale);
-
       const dir = currentTimeScale < 0 ? "right" : "left";
       if (dir !== lastDirAttr) {
         wrapper.setAttribute("data-direction", dir);
@@ -573,7 +521,6 @@ function initDraggableMarquee(scope) {
       }
     };
     gsap.ticker.add(tickerFn);
-
     const marqueeObserver = Observer.create({
       target: wrapper,
       type: "pointer,touch",
@@ -584,7 +531,6 @@ function initDraggableMarquee(scope) {
         dragInfluence = gsap.utils.clamp(-multiplier, multiplier, velocity);
       }
     });
-
     let lastScrollY = window.scrollY;
     const onScroll = () => {
       const currentY = window.scrollY;
@@ -601,7 +547,6 @@ function initDraggableMarquee(scope) {
       window.addEventListener("scroll", onScroll, { passive: true });
       cleanupScroll = () => window.removeEventListener("scroll", onScroll);
     }
-
     ScrollTrigger.create({
       trigger: wrapper,
       start: "top bottom",
@@ -611,11 +556,9 @@ function initDraggableMarquee(scope) {
       onLeave:     () => { isInView = false; marqueeLoop.pause();  marqueeObserver.disable(); },
       onLeaveBack: () => { isInView = false; marqueeLoop.pause();  marqueeObserver.disable(); }
     });
-
     wrapper.setAttribute("data-draggable-marquee-init", "initialized");
   });
 }
-
 // -----------------------------------------
 // MIDDELPUNT SCROLL ANIMATION
 // -----------------------------------------
@@ -627,9 +570,7 @@ function initMiddelpuntScroll(scope) {
   if (!section) return;
   const image = section.querySelector('.middelpunt-image');
   if (!image) return;
-
   const targetWidth = window.innerWidth <= 991 ? '16svw' : '12svw';
-
   gsap.set(image, { width: '0svw' });
   const tween = gsap.to(image, {
     width: targetWidth,
@@ -643,39 +584,32 @@ function initMiddelpuntScroll(scope) {
   });
   _middelpuntST = tween.scrollTrigger;
 }
-
 // -----------------------------------------
 // NAVBAR LINK HOVER (gradient sweep)
 // -----------------------------------------
 function initNavbarLinkHover(scope) {
   scope = scope || document;
   const links = scope.querySelectorAll('.navbar-link-large');
-
   links.forEach(link => {
     if (link.dataset.hoverInit === 'true') return;
     const bg = link.querySelector('.menu-nav-button-bg');
     if (!bg) return;
-
     gsap.set(bg, { xPercent: -100 });
-
     link.addEventListener('mouseenter', () => {
       gsap.fromTo(bg,
         { xPercent: -100 },
         { xPercent: -33, duration: 1, ease: 'power2.out', overwrite: true }
       );
     });
-
     link.addEventListener('mouseleave', () => {
       gsap.fromTo(bg,
         { xPercent: -33 },
         { xPercent: 34, duration: 1, ease: 'power2.out', overwrite: true }
       );
     });
-
     link.dataset.hoverInit = 'true';
   });
 }
-
 // -----------------------------------------
 // ROUTE NAAR BANKOH
 // -----------------------------------------
@@ -686,7 +620,6 @@ function initRouteToBankoh(scope) {
   const button = scope.querySelector('[data-route-submit]');
   if (!input || !button) return;
   if (button.dataset.routeInit === 'true') return;
-
   const openRoute = (e) => {
     e.preventDefault();
     const origin = input.value.trim();
@@ -697,35 +630,28 @@ function initRouteToBankoh(scope) {
     const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
-
   button.addEventListener('click', openRoute);
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') openRoute(e);
   });
-
   button.dataset.routeInit = 'true';
 }
-
 // -----------------------------------------
 // FAQ ACCORDION (Relume)
 // -----------------------------------------
 function initFaqAccordion(scope) {
   scope = scope || document;
   const items = scope.querySelectorAll('.faq3_accordion');
-
   items.forEach(item => {
     if (item.dataset.faqInit === 'true') return;
     const question = item.querySelector('.faq3_question');
     const answer = item.querySelector('.faq3_answer');
     const icon = item.querySelector('.faq3_icon-wrapper');
     if (!question || !answer) return;
-
     gsap.set(answer, { height: 0, overflow: 'hidden' });
     if (icon) gsap.set(icon, { rotation: 0 });
     question.style.cursor = 'pointer';
-
     let isOpen = false;
-
     question.addEventListener('click', () => {
       isOpen = !isOpen;
       gsap.to(answer, {
@@ -741,11 +667,9 @@ function initFaqAccordion(scope) {
         });
       }
     });
-
     item.dataset.faqInit = 'true';
   });
 }
-
 // -----------------------------------------
 // BANKOH LOGO REVEAL
 // -----------------------------------------
@@ -753,21 +677,16 @@ function initLogoReveal(scope) {
   scope = scope || document;
   const wrapper = scope.querySelector('.bnackup');
   if (!wrapper || wrapper.dataset.logoInit === 'true') return;
-
   const paths = wrapper.querySelectorAll('path[data-letter]');
   if (!paths.length) return;
-
   const grouped = {};
   paths.forEach(p => {
     const letter = p.dataset.letter;
     (grouped[letter] = grouped[letter] || []).push(p);
   });
-
   const order = ['b', 'a', 'n', 'k', 'o', 'h'];
   const letterGroups = order.map(l => grouped[l]).filter(Boolean);
-
   letterGroups.forEach(g => gsap.set(g, { opacity: 0, y: 150 }));
-
   letterGroups.forEach((g, i) => {
     gsap.to(g, {
       opacity: 1,
@@ -777,25 +696,20 @@ function initLogoReveal(scope) {
       delay: 0.2 + i * 0.1
     });
   });
-
   wrapper.dataset.logoInit = 'true';
 }
-
 // -----------------------------------------
 // HIGHLIGHT TEXT ON SCROLL
 // -----------------------------------------
 function initHighlightText(scope) {
   scope = scope || document;
   const targets = scope.querySelectorAll("[data-highlight-text]");
-
   targets.forEach((heading) => {
     if (heading.dataset.highlightInit === 'true') return;
-
     const scrollStart = heading.getAttribute("data-highlight-scroll-start") || "top 70%";
     const scrollEnd = heading.getAttribute("data-highlight-scroll-end") || "bottom 70%";
     const fadedValue = parseFloat(heading.getAttribute("data-highlight-fade")) || 0.1;
     const staggerValue = parseFloat(heading.getAttribute("data-highlight-stagger")) || 0.1;
-
     new SplitText(heading, {
       type: "words, chars",
       autoSplit: true,
@@ -816,7 +730,6 @@ function initHighlightText(scope) {
         });
       }
     });
-
     heading.dataset.highlightInit = 'true';
   });
 }
@@ -824,11 +737,9 @@ function initHighlightText(scope) {
 // GLOBAL PARALLAX
 // -----------------------------------------
 let _parallaxMM = null;
-
 function initGlobalParallax(scope) {
   scope = scope || document;
   if (_parallaxMM) { _parallaxMM.revert(); _parallaxMM = null; }
-
   _parallaxMM = gsap.matchMedia();
   _parallaxMM.add({
     isMobile: "(max-width:479px)",
@@ -837,7 +748,6 @@ function initGlobalParallax(scope) {
     isDesktop: "(min-width:992px)"
   }, (context) => {
     const { isMobile, isMobileLandscape, isTablet } = context.conditions;
-
     scope.querySelectorAll('[data-parallax="trigger"]').forEach((trigger) => {
       const disable = trigger.getAttribute("data-parallax-disable");
       if (
@@ -845,26 +755,19 @@ function initGlobalParallax(scope) {
         (disable === "mobileLandscape" && isMobileLandscape) ||
         (disable === "tablet" && isTablet)
       ) return;
-
       const target = trigger.querySelector('[data-parallax="target"]') || trigger;
       const direction = trigger.getAttribute("data-parallax-direction") || "vertical";
       const prop = direction === "horizontal" ? "xPercent" : "yPercent";
-
       const scrubAttr = trigger.getAttribute("data-parallax-scrub");
       const scrub = scrubAttr ? parseFloat(scrubAttr) : true;
-
       const startAttr = trigger.getAttribute("data-parallax-start");
       const startVal = startAttr !== null ? parseFloat(startAttr) : 20;
-
       const endAttr = trigger.getAttribute("data-parallax-end");
       const endVal = endAttr !== null ? parseFloat(endAttr) : -20;
-
       const scrollStartRaw = trigger.getAttribute("data-parallax-scroll-start") || "top bottom";
       const scrollStart = `clamp(${scrollStartRaw})`;
-
       const scrollEndRaw = trigger.getAttribute("data-parallax-scroll-end") || "bottom top";
       const scrollEnd = `clamp(${scrollEndRaw})`;
-
       gsap.fromTo(target,
         { [prop]: startVal },
         {
