@@ -46,6 +46,34 @@ function initAfterEnterFunctions(next) {
   if (next.querySelector('[data-read-time-article]')) initDisplayReadTime(next);
 }
 // -----------------------------------------
+// H1 PAGE REVEAL 
+// -----------------------------------------
+function initH1Reveal(scope) {
+  scope = scope || document;
+  scope.querySelectorAll('.heading-style-h1').forEach(heading => {
+    if (heading.dataset.h1RevealInit === 'true') return;
+    heading.dataset.h1RevealInit = 'true';
+    if (reducedMotion) return;
+    const reveal = () => {
+      const split = new SplitText(heading, { type: 'chars', mask: 'chars' });
+      gsap.from(split.chars, {
+        yPercent: -150,
+        scale: 0.5,
+        rotation: -90,
+        duration: 0.5,
+        ease: 'power4.out',
+        stagger: 0.04,
+        onComplete: () => split.revert()
+      });
+    };
+    if (document.fonts && document.fonts.status !== 'loaded') {
+      document.fonts.ready.then(reveal);
+    } else {
+      reveal();
+    }
+  });
+}
+// -----------------------------------------
 // PAGE TRANSITIONS (parallax slide)
 // -----------------------------------------
 function runPageOnceAnimation(next) {
@@ -97,6 +125,7 @@ function runPageEnterAnimation(next) {
   // next staat off-screen onderaan: bind IX2/IX3 hier, vóór hij in beeld schuift
   tl.set(next, { zIndex: 3, y: "100vh" }, "startEnter");
   tl.call(reinitWebflow, null, "startEnter");
+  tl.call(() => initH1Reveal(next), null, "startEnter"); 
   tl.to(next, {
     y: "0vh",
     duration: 1.2,
@@ -274,6 +303,7 @@ barba.init({
     async once(data) {
       initOnceFunctions();
       initAfterEnterFunctions(data.next.container);
+      initH1Reveal(data.next.container);   
       const tl = runPageOnceAnimation(data.next.container);
       if (hasLenis) { lenis.resize(); lenis.start(); }
       if (hasScrollTrigger) ScrollTrigger.refresh();
