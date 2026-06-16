@@ -75,6 +75,18 @@ function initH1Reveal(scope, delay = 0) {
   });
 }
 // -----------------------------------------
+// MENU RANDOM PHOTO 
+// -----------------------------------------
+function initMenuRandomPhoto(scope) {
+  scope = scope || document;
+  scope.querySelectorAll('[data-random-image]').forEach(list => {
+    const items = Array.from(list.children);
+    if (items.length < 2) return;
+    const pick = Math.floor(Math.random() * items.length);
+    items.forEach((item, i) => { item.style.display = i === pick ? '' : 'none'; });
+  });
+}
+// -----------------------------------------
 // PAGE TRANSITIONS (parallax slide)
 // -----------------------------------------
 function runPageOnceAnimation(next) {
@@ -289,6 +301,7 @@ barba.hooks.enter(data => {
 });
 barba.hooks.afterEnter(data => {
   initAfterEnterFunctions(data.next.container);
+   initMenuRandomPhoto(document);
   if (hasLenis) { lenis.resize(); lenis.start(); }
   if (hasScrollTrigger) ScrollTrigger.refresh();
 });
