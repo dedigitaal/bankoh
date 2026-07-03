@@ -55,7 +55,7 @@ function initH1Reveal(scope, delay = 0) {
     heading.dataset.h1RevealInit = 'true';
     if (reducedMotion) return;
     const reveal = () => {
-      const split = new SplitText(heading, { type: 'chars', mask: 'chars' });
+      const split = new SplitText(heading, { type: 'words,chars', mask: 'chars' });
       gsap.from(split.chars, {
         yPercent: -150,
         scale: 0.5,
