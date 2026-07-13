@@ -135,6 +135,8 @@ function runPageEnterAnimation(next) {
   tl.set(next, { zIndex: 3, y: "100vh" }, "startEnter");
   tl.call(reinitWebflow, null, "startEnter");
   tl.call(() => initH1Reveal(next, 1.2), null, "startEnter");
+  const logoPaths = next.querySelectorAll('.bnackup path[data-letter]');
+  if (logoPaths.length) tl.set(logoPaths, { opacity: 0, y: 150 }, "startEnter");
   tl.to(next, {
     y: "0vh",
     duration: 1.2,
