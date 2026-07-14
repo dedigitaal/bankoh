@@ -291,7 +291,8 @@ barba.hooks.beforeEnter(data => {
   gsap.set(data.next.container, { position: "fixed", top: 0, left: 0, right: 0 });
   if (lenis && typeof lenis.stop === "function") lenis.stop();
   initBeforeEnterFunctions(data.next.container);
- const navTheme = parsed.body.getAttribute("data-theme-nav") || "dark";
+ if (_themeScrollCleanup) { _themeScrollCleanup(); _themeScrollCleanup = null; }
+  const navTheme = parsed.body.getAttribute("data-theme-nav") || "dark";
   document.body.setAttribute("data-theme-nav", navTheme);
 });
 barba.hooks.afterLeave(() => {
