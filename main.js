@@ -17,6 +17,24 @@ const durationDefault = 0.6;
 CustomEase.create("osmo", "0.625, 0.05, 0, 1");
 CustomEase.create("parallax", "0.7, 0.05, 0.13, 1");
 gsap.defaults({ ease: "osmo", duration: durationDefault });
+
+// -----------------------------------------
+// ELFSIGHT RE-INIT
+// -----------------------------------------
+function initElfsight(scope) {
+  scope = scope || document;
+  if (!scope.querySelector('[class*="elfsight-app-"]')) return;
+  if (window.eapps && typeof window.eapps.initWidgetsFromBuffer === 'function') {
+    window.eapps.initWidgetsFromBuffer();
+  } else {
+    const old = document.querySelector('script[src*="elfsightcdn.com/platform.js"]');
+    if (old) old.remove();
+    const s = document.createElement('script');
+    s.src = 'https://elfsightcdn.com/platform.js';
+    s.async = true;
+    document.body.appendChild(s);
+  }
+}
 // -----------------------------------------
 // FUNCTION REGISTRY
 // -----------------------------------------
@@ -32,6 +50,7 @@ function initAfterEnterFunctions(next) {
   nextPage = next || document;
   initCheckSectionThemeScroll(next);
   initNavbarHideOnScroll(next);
+  initElfsight(next);
   if (next.querySelector('[data-draggable-marquee-init]')) initDraggableMarquee(next);
   if (next.querySelector('.section-middelpunt')) initMiddelpuntScroll(next);
   if (hasLenis) lenis.resize();
