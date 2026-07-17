@@ -82,8 +82,7 @@ function initH1Reveal(scope, delay = 0) {
         duration: 0.5,
         ease: 'power4.out',
         stagger: 0.04,
-        delay,
-        onComplete: () => split.revert()
+        delay
       });
     };
     if (document.fonts && document.fonts.status !== 'loaded') {
