@@ -604,14 +604,14 @@ function initMiddelpuntScroll(scope) {
   if (!section) return;
   const image = section.querySelector('.middelpunt-image');
   if (!image) return;
-  const targetWidth = window.innerWidth <= 991 ? '16svw' : '12svw';
+  const targetWidth = window.innerWidth <= 991 ? '12svw' : '8svw';
   gsap.set(image, { width: '0svw' });
   const tween = gsap.to(image, {
     width: targetWidth,
     ease: 'power2.out',
     scrollTrigger: {
       trigger: section,
-      start: 'top 75%',
+      start: 'top 50%',
       end: 'bottom 25%',
       scrub: 0.8,
     }
