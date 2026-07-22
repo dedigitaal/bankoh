@@ -611,7 +611,7 @@ function initMiddelpuntScroll(scope) {
     ease: 'power2.out',
     scrollTrigger: {
       trigger: section,
-      start: 'top 75%',
+      start: 'top 50%',
       end: 'bottom 25%',
       scrub: 0.8,
     }
