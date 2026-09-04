@@ -17,7 +17,6 @@ const durationDefault = 0.6;
 CustomEase.create("osmo", "0.625, 0.05, 0, 1");
 CustomEase.create("parallax", "0.7, 0.05, 0.13, 1");
 gsap.defaults({ ease: "osmo", duration: durationDefault });
-
 // -----------------------------------------
 // ELFSIGHT RE-INIT
 // -----------------------------------------
@@ -34,6 +33,24 @@ function initElfsight(scope) {
     s.async = true;
     document.body.appendChild(s);
   }
+}
+// -----------------------------------------
+// SLUIT NAVBAR DROPDOWNS BIJ PAGINAWISSEL
+// -----------------------------------------
+function closeNavDropdowns() {
+  document.querySelectorAll('.w-dropdown-toggle.w--open').forEach(el => {
+    el.classList.remove('w--open');
+    el.setAttribute('aria-expanded', 'false');
+  });
+  document.querySelectorAll('.w-dropdown-list.w--open').forEach(el => {
+    el.classList.remove('w--open');
+  });
+  document.querySelectorAll('.w-nav-button.w--open').forEach(el => {
+    el.classList.remove('w--open');
+  });
+  document.querySelectorAll('.w-nav-overlay').forEach(el => {
+    el.style.display = '';
+  });
 }
 // -----------------------------------------
 // FUNCTION REGISTRY
@@ -309,6 +326,7 @@ barba.hooks.beforeEnter(data => {
   gsap.set(data.next.container, { position: "fixed", top: 0, left: 0, right: 0 });
   if (lenis && typeof lenis.stop === "function") lenis.stop();
   initBeforeEnterFunctions(data.next.container);
+   closeNavDropdowns();
  if (_themeScrollCleanup) { _themeScrollCleanup(); _themeScrollCleanup = null; }
   const navTheme = parsed.body.getAttribute("data-theme-nav") || "dark";
   document.body.setAttribute("data-theme-nav", navTheme);
