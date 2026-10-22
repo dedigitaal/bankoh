@@ -106,12 +106,12 @@ function initBonnieCookieSpacing() {
     const rect = cookie?.getBoundingClientRect();
     const visible = rect?.width > 0 && rect?.height > 0 && getComputedStyle(cookie).visibility !== 'hidden';
     const width = frame.getBoundingClientRect().width;
-    const beside = visible ? rect.right + 16 : 24;
+    const beside = visible ? rect.right + 8 : 24;
     const fits = beside + width <= window.innerWidth - 8;
     const mobile = window.innerWidth <= 767;
     const collapsed = width <= 80;
     const left = mobile && visible && collapsed
-      ? Math.max(0, rect.left + (rect.width - width) / 2)
+      ? Math.max(0, rect.left + (rect.width - width) / 2 + 8)
       : fits ? beside : Math.max(8, Math.min(24, window.innerWidth - width - 8));
     const baseBottom = !mobile && visible && collapsed
       ? Math.max(0, window.innerHeight - rect.bottom + (rect.height - frame.getBoundingClientRect().height) / 2 + 8)
