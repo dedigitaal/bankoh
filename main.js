@@ -91,6 +91,7 @@ function initH1Reveal(scope, delay = 0) {
     heading.dataset.h1RevealInit = 'true';
     if (reducedMotion) return;
     const reveal = () => {
+      if (reducedMotion || !heading.isConnected) return;
       const split = new SplitText(heading, { type: 'words,chars', mask: 'chars' });
       gsap.from(split.chars, {
         yPercent: -150,
@@ -227,7 +228,12 @@ function initTableOfContents(scope) {
       if (!text) return;
       headings.push(heading);
     });
-    if (!headings.length) return;
+    if (!headings.length) {
+      listEl.replaceChildren();
+      const sidebar = listEl.closest('.toc-sidebar');
+      if (sidebar) sidebar.hidden = true;
+      return;
+    }
     headings.forEach(heading => {
       if (!heading.id) {
         heading.id = slugify(heading.textContent.trim());
@@ -280,11 +286,11 @@ function initTableOfContents(scope) {
       const id = link.getAttribute('href')?.slice(1);
       const target = document.getElementById(id);
       if (!target) return;
-      if (typeof lenis !== 'undefined' && typeof lenis.scrollTo === 'function') {
+      if (lenis && !reducedMotion && typeof lenis.scrollTo === 'function') {
         lenis.scrollTo(target, { offset: -offset });
       } else {
         const y = target.getBoundingClientRect().top + window.scrollY - offset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
+        window.scrollTo({ top: y, behavior: reducedMotion ? 'instant' : 'smooth' });
       }
     });
     root.dataset.tocInit = 'true';
@@ -404,7 +410,7 @@ function applyThemeFrom(pageTheme) {
 function initLenis() {
   if (lenis) return;
   if (!hasLenis) return;
-  lenis = new Lenis({ lerp: 0.08, wheelMultiplier: 0.9 });
+  lenis = new Lenis({ lerp: reducedMotion ? 1 : 0.08, smoothWheel: !reducedMotion, wheelMultiplier: 0.9 });
   if (hasScrollTrigger) lenis.on("scroll", ScrollTrigger.update);
   gsap.ticker.add(time => lenis.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
@@ -480,6 +486,7 @@ function initCheckSectionThemeScroll(scope) {
 // -----------------------------------------
 let _navbarST = null;
 function initNavbarHideOnScroll(scope) {
+  if (reducedMotion) return;
   if (_navbarST) { _navbarST.kill(); _navbarST = null; }
   const navbar = (scope && scope.querySelector(".navbar")) || document.querySelector(".navbar");
   if (!navbar) return;
@@ -514,6 +521,7 @@ function initNavbarHideOnScroll(scope) {
 // DRAGGABLE MARQUEE (scroll-driven direction)
 // -----------------------------------------
 function initDraggableMarquee(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   const wrappers = scope.querySelectorAll("[data-draggable-marquee-init]");
   const getNumberAttr = (el, name, fallback) => {
@@ -616,6 +624,7 @@ function initDraggableMarquee(scope) {
 // -----------------------------------------
 let _middelpuntST = null;
 function initMiddelpuntScroll(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   if (_middelpuntST) { _middelpuntST.kill(); _middelpuntST = null; }
   const section = scope.querySelector('.section-middelpunt');
@@ -640,6 +649,7 @@ function initMiddelpuntScroll(scope) {
 // NAVBAR LINK HOVER (gradient sweep)
 // -----------------------------------------
 function initNavbarLinkHover(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   const links = scope.querySelectorAll('.navbar-link-large');
   links.forEach(link => {
@@ -708,13 +718,13 @@ function initFaqAccordion(scope) {
       isOpen = !isOpen;
       gsap.to(answer, {
         height: isOpen ? 'auto' : 0,
-        duration: 0.5,
+        duration: reducedMotion ? 0 : 0.5,
         ease: isOpen ? 'power2.out' : 'power2.in'
       });
       if (icon) {
         gsap.to(icon, {
           rotation: isOpen ? 180 : 0,
-          duration: 0.5,
+          duration: reducedMotion ? 0 : 0.5,
           ease: isOpen ? 'power2.out' : 'power2.in'
         });
       }
@@ -726,6 +736,7 @@ function initFaqAccordion(scope) {
 // BANKOH LOGO REVEAL
 // -----------------------------------------
 function initLogoReveal(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   const wrapper = scope.querySelector('.bnackup');
   if (!wrapper || wrapper.dataset.logoInit === 'true') return;
@@ -754,6 +765,7 @@ function initLogoReveal(scope) {
 // HIGHLIGHT TEXT ON SCROLL
 // -----------------------------------------
 function initHighlightText(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   const targets = scope.querySelectorAll("[data-highlight-text]");
   targets.forEach((heading) => {
@@ -790,6 +802,7 @@ function initHighlightText(scope) {
 // -----------------------------------------
 let _parallaxMM = null;
 function initGlobalParallax(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   if (_parallaxMM) { _parallaxMM.revert(); _parallaxMM = null; }
   _parallaxMM = gsap.matchMedia();
@@ -836,3 +849,50 @@ function initGlobalParallax(scope) {
     });
   });
 }
+
+// Respond to a change in the visitor's motion preference.
+const bankohMotionMedia = gsap.matchMedia();
+bankohMotionMedia.add({
+  reduce: "(prefers-reduced-motion: reduce)",
+  normal: "(prefers-reduced-motion: no-preference)"
+}, context => {
+  reducedMotion = context.conditions.reduce;
+  if (lenis) {
+    lenis.options.smoothWheel = !reducedMotion;
+    lenis.options.lerp = reducedMotion ? 1 : 0.08;
+  }
+  if (!reducedMotion) return;
+  document.documentElement.classList.remove("js-logo");
+  const motionTargets = document.querySelectorAll(
+    '.bnackup path[data-letter], .heading-style-h1 *, [data-highlight-text] *, [data-parallax="target"], [data-draggable-marquee-collection], .middelpunt-image, .navbar'
+  );
+  gsap.getTweensOf(motionTargets).forEach(tween => {
+    if (tween.repeat() !== -1) tween.progress(1);
+    tween.kill();
+  });
+  ScrollTrigger.getAll().forEach(trigger => {
+    if (trigger === _navbarST || trigger.trigger?.matches(
+      '.section-middelpunt, [data-highlight-text], [data-parallax="trigger"], [data-draggable-marquee-init]'
+    )) trigger.kill();
+  });
+  document.querySelectorAll("video[autoplay]").forEach(video => video.pause());
+});
+
+(function () {
+  function applyHeroPoster(scope) {
+    scope.querySelectorAll('.header7_background-video[data-poster-url]').forEach(function (wrapper) {
+      var video = wrapper.querySelector('video');
+      var poster = wrapper.getAttribute('data-poster-url');
+      if (video && poster && !video.hasAttribute('poster')) {
+        video.setAttribute('poster', poster);
+      }
+    });
+  }
+  applyHeroPoster(document);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { applyHeroPoster(document); }, { once: true });
+  }
+  if (window.barba && window.barba.hooks) {
+    window.barba.hooks.beforeEnter(function (data) { applyHeroPoster(data.next.container); });
+  }
+})();
