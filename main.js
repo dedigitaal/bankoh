@@ -59,10 +59,34 @@ function initOnceFunctions() {
   initLenis();
   if (onceFunctionsInitialized) return;
   onceFunctionsInitialized = true;
+  initNavbarDropdownMode();
   document.querySelectorAll('.navbar .mobyes > a.linkblock-cta[href="#"]').forEach(link => {
     link.setAttribute('href', '#zc-action-open');
     link.setAttribute('data-barba-prevent', 'all');
   });
+}
+function initNavbarDropdownMode() {
+  const mobile = window.matchMedia('(max-width: 991px)');
+  const dropdowns = Array.from(document.querySelectorAll('.navbar .w-dropdown')).map(element => ({
+    element,
+    hover: element.getAttribute('data-hover'),
+    delay: element.getAttribute('data-delay')
+  }));
+  function applyMode() {
+    dropdowns.forEach(({ element, hover, delay }) => {
+      for (const [name, value] of [
+        ['data-hover', mobile.matches ? 'false' : hover],
+        ['data-delay', mobile.matches ? '0' : delay]
+      ]) {
+        if (value === null) element.removeAttribute(name);
+        else element.setAttribute(name, value);
+      }
+    });
+    // Webflow caches dropdown settings; refresh only this module's handlers.
+    window.Webflow?.require?.('dropdown')?.ready?.();
+  }
+  applyMode();
+  mobile.addEventListener?.('change', applyMode);
 }
 function initBeforeEnterFunctions(next) {
   nextPage = next || document;
