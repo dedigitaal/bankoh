@@ -59,12 +59,17 @@ function initOnceFunctions() {
   initLenis();
   if (onceFunctionsInitialized) return;
   onceFunctionsInitialized = true;
+  document.querySelectorAll('.navbar .mobyes > a.linkblock-cta[href="#"]').forEach(link => {
+    link.setAttribute('href', '#zc-action-open');
+    link.setAttribute('data-barba-prevent', 'all');
+  });
 }
 function initBeforeEnterFunctions(next) {
   nextPage = next || document;
 }
 function initAfterEnterFunctions(next) {
   nextPage = next || document;
+  if (reducedMotion) nextPage.querySelectorAll('video[autoplay]').forEach(video => video.pause());
   initCheckSectionThemeScroll(next);
   initNavbarHideOnScroll(next);
   initElfsight(next);
