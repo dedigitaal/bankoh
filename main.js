@@ -952,7 +952,6 @@ bankohMotionMedia.add({
     try {
       await load();
       window.ZenchefWidget.open();
-      button.hidden = true;
       if (status) status.textContent = '';
     } catch {
       // The direct booking page remains usable if the embedded SDK fails.
