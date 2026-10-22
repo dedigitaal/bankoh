@@ -109,7 +109,8 @@ function initBonnieCookieSpacing() {
     const beside = visible ? rect.right + 16 : 24;
     const fits = beside + width <= window.innerWidth - 8;
     const left = fits ? beside : Math.max(8, Math.min(24, window.innerWidth - width - 8));
-    const bottom = visible && !fits ? Math.max(24, window.innerHeight - rect.top + 16) : 24;
+    const baseBottom = window.innerWidth <= 479 ? 104 : 24;
+    const bottom = visible && !fits ? Math.max(baseBottom, window.innerHeight - rect.top + 16) : baseBottom;
     for (const [property, value] of [['left', left + 'px'], ['bottom', bottom + 'px']]) {
       if (frame.style.getPropertyValue(property) !== value) frame.style.setProperty(property, value, 'important');
     }
