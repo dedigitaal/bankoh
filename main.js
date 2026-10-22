@@ -936,6 +936,8 @@ bankohMotionMedia.add({
       script.src = 'https://sdk.zenchef.com/v1/sdk.min.js';
       script.async = true;
       script.onerror = () => finish(new Error('Zenchef unavailable'));
+      // Let the SDK queue the first open until its iframe is listening.
+      document.querySelector('.zc-widget-config')?.setAttribute('data-open', 'true');
       document.body.appendChild(script);
       check();
     }).catch(error => { pending = null; throw error; });
