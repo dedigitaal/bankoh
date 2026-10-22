@@ -72,10 +72,52 @@ function initOnceFunctions() {
   if (onceFunctionsInitialized) return;
   onceFunctionsInitialized = true;
   initNavbarDropdownMode();
+  initBonnieCookieSpacing();
   document.querySelectorAll('.navbar .mobyes > a.linkblock-cta[href="#"]').forEach(link => {
     link.setAttribute('href', '#zc-action-open');
     link.setAttribute('data-barba-prevent', 'all');
   });
+}
+function initBonnieCookieSpacing() {
+  let frame;
+  let cookie;
+  let pending = false;
+  const schedule = () => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => { pending = false; position(); });
+  };
+  const observer = new MutationObserver(schedule);
+  const resize = new ResizeObserver(schedule);
+  function position() {
+    const nextFrame = document.getElementById('bonnie-widget-frame');
+    const nextCookie = document.getElementById('CookiebotWidget');
+    if (nextFrame !== frame || nextCookie !== cookie) {
+      observer.disconnect();
+      resize.disconnect();
+      frame = nextFrame;
+      cookie = nextCookie;
+      [frame, cookie].filter(Boolean).forEach(element => {
+        observer.observe(element, { attributes: true, attributeFilter: ['style', 'class'] });
+        resize.observe(element);
+      });
+    }
+    if (!frame) return;
+    const rect = cookie?.getBoundingClientRect();
+    const visible = rect?.width > 0 && rect?.height > 0 && getComputedStyle(cookie).visibility !== 'hidden';
+    const width = frame.getBoundingClientRect().width;
+    const beside = visible ? rect.right + 16 : 24;
+    const fits = beside + width <= window.innerWidth - 8;
+    const left = fits ? beside : Math.max(8, Math.min(24, window.innerWidth - width - 8));
+    const bottom = visible && !fits ? Math.max(24, window.innerHeight - rect.top + 16) : 24;
+    for (const [property, value] of [['left', left + 'px'], ['bottom', bottom + 'px']]) {
+      if (frame.style.getPropertyValue(property) !== value) frame.style.setProperty(property, value, 'important');
+    }
+  }
+  // Both vendors inject their widgets asynchronously, outside the Barba container.
+  new MutationObserver(schedule).observe(document.body, { childList: true });
+  window.addEventListener('resize', schedule, { passive: true });
+  position();
 }
 function initNavbarDropdownMode() {
   const mobile = window.matchMedia('(max-width: 991px)');
