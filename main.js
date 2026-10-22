@@ -37,19 +37,31 @@ function initElfsight(scope) {
 // -----------------------------------------
 // SLUIT NAVBAR DROPDOWNS BIJ PAGINAWISSEL
 // -----------------------------------------
-function closeNavDropdowns() {
-  document.querySelectorAll('.w-dropdown-toggle.w--open').forEach(el => {
-    el.classList.remove('w--open');
-    el.setAttribute('aria-expanded', 'false');
+async function closeNavDropdowns() {
+  const buttons = Array.from(document.querySelectorAll('.navbar .w-nav-button'));
+  let closeDuration = 0;
+  buttons.forEach(button => {
+    if (!button.classList.contains('w--open')) return;
+    const navbar = button.closest('.w-nav');
+    closeDuration = Math.max(closeDuration, Number(navbar?.getAttribute('data-duration')) || 400);
+    // Let Webflow close its own state, overlay, ARIA and interaction triggers.
+    button.click();
   });
-  document.querySelectorAll('.w-dropdown-list.w--open').forEach(el => {
-    el.classList.remove('w--open');
+  document.querySelectorAll('.navbar .w-dropdown').forEach(dropdown => {
+    if (dropdown.querySelector('.w-dropdown-toggle.w--open')) {
+      closeDuration = Math.max(closeDuration, Number(dropdown.getAttribute('data-delay')) || 0);
+      window.jQuery?.(dropdown).triggerHandler('w-close.w-dropdown');
+    }
   });
-  document.querySelectorAll('.w-nav-button.w--open').forEach(el => {
-    el.classList.remove('w--open');
-  });
-  document.querySelectorAll('.w-nav-overlay').forEach(el => {
-    el.style.display = '';
+  // Complete Webflow's debounced close and icon animation before IX is rebuilt.
+  if (closeDuration) await new Promise(resolve => setTimeout(resolve, closeDuration + 100));
+  buttons.forEach(button => {
+    if (button.classList.contains('w--open')) return;
+    button.querySelectorAll('.menu-icon1_line-top, .menu-icon1_line-bottom').forEach(line => {
+      line.style.removeProperty('transform');
+      line.style.removeProperty('transform-style');
+    });
+    button.querySelector('.menu-icon1_line-middle')?.style.removeProperty('width');
   });
 }
 // -----------------------------------------
@@ -354,6 +366,7 @@ function initDisplayReadTime(scope) {
 // -----------------------------------------
 // BARBA HOOKS
 // -----------------------------------------
+barba.hooks.beforeLeave(() => closeNavDropdowns());
 barba.hooks.beforeEnter(data => {
   const parsed = new DOMParser().parseFromString(data.next.html, "text/html");
   const wfPage = parsed.documentElement.getAttribute("data-wf-page");
@@ -361,7 +374,7 @@ barba.hooks.beforeEnter(data => {
   gsap.set(data.next.container, { position: "fixed", top: 0, left: 0, right: 0 });
   if (lenis && typeof lenis.stop === "function") lenis.stop();
   initBeforeEnterFunctions(data.next.container);
-   closeNavDropdowns();
+
  if (_themeScrollCleanup) { _themeScrollCleanup(); _themeScrollCleanup = null; }
   const navTheme = parsed.body.getAttribute("data-theme-nav") || "dark";
   document.body.setAttribute("data-theme-nav", navTheme);
@@ -925,3 +938,4 @@ bankohMotionMedia.add({
     window.barba.hooks.beforeEnter(function (data) { applyHeroPoster(data.next.container); });
   }
 })();
+
