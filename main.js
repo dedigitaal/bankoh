@@ -114,7 +114,7 @@ function initBonnieCookieSpacing() {
       ? Math.max(0, rect.left + (rect.width - width) / 2)
       : fits ? beside : Math.max(8, Math.min(24, window.innerWidth - width - 8));
     const baseBottom = !mobile && visible && collapsed
-      ? Math.max(0, window.innerHeight - rect.bottom + (rect.height - frame.getBoundingClientRect().height) / 2)
+      ? Math.max(0, window.innerHeight - rect.bottom + (rect.height - frame.getBoundingClientRect().height) / 2 + 8)
       : mobile && !collapsed ? 104 : 24;
     const bottom = visible && (mobile || !fits)
       ? Math.max(baseBottom, window.innerHeight - rect.top + 12) : baseBottom;
