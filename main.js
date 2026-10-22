@@ -910,7 +910,7 @@ bankohMotionMedia.add({
   const status = document.getElementById('bankoh-reserve-status');
   let pending = null;
   let opening = false;
-  const ready = () => typeof window.ZC?.action?.open === 'function';
+  const ready = () => typeof window.ZenchefWidget?.open === 'function';
 
   function load() {
     if (ready()) return Promise.resolve();
@@ -949,7 +949,7 @@ bankohMotionMedia.add({
     if (status) status.textContent = 'Reserveringen worden geladen.';
     try {
       await load();
-      window.ZC.action.open();
+      window.ZenchefWidget.open();
       button.hidden = true;
       if (status) status.textContent = '';
     } catch {
