@@ -37,19 +37,31 @@ function initElfsight(scope) {
 // -----------------------------------------
 // SLUIT NAVBAR DROPDOWNS BIJ PAGINAWISSEL
 // -----------------------------------------
-function closeNavDropdowns() {
-  document.querySelectorAll('.w-dropdown-toggle.w--open').forEach(el => {
-    el.classList.remove('w--open');
-    el.setAttribute('aria-expanded', 'false');
+async function closeNavDropdowns() {
+  const buttons = Array.from(document.querySelectorAll('.navbar .w-nav-button'));
+  let closeDuration = 0;
+  buttons.forEach(button => {
+    if (!button.classList.contains('w--open')) return;
+    const navbar = button.closest('.w-nav');
+    closeDuration = Math.max(closeDuration, Number(navbar?.getAttribute('data-duration')) || 400);
+    // Let Webflow close its own state, overlay, ARIA and interaction triggers.
+    button.click();
   });
-  document.querySelectorAll('.w-dropdown-list.w--open').forEach(el => {
-    el.classList.remove('w--open');
+  document.querySelectorAll('.navbar .w-dropdown').forEach(dropdown => {
+    if (dropdown.querySelector('.w-dropdown-toggle.w--open')) {
+      closeDuration = Math.max(closeDuration, Number(dropdown.getAttribute('data-delay')) || 0);
+      window.jQuery?.(dropdown).triggerHandler('w-close.w-dropdown');
+    }
   });
-  document.querySelectorAll('.w-nav-button.w--open').forEach(el => {
-    el.classList.remove('w--open');
-  });
-  document.querySelectorAll('.w-nav-overlay').forEach(el => {
-    el.style.display = '';
+  // Complete Webflow's debounced close and icon animation before IX is rebuilt.
+  if (closeDuration) await new Promise(resolve => setTimeout(resolve, closeDuration + 100));
+  buttons.forEach(button => {
+    if (button.classList.contains('w--open')) return;
+    button.querySelectorAll('.menu-icon1_line-top, .menu-icon1_line-bottom').forEach(line => {
+      line.style.removeProperty('transform');
+      line.style.removeProperty('transform-style');
+    });
+    button.querySelector('.menu-icon1_line-middle')?.style.removeProperty('width');
   });
 }
 // -----------------------------------------
@@ -59,12 +71,91 @@ function initOnceFunctions() {
   initLenis();
   if (onceFunctionsInitialized) return;
   onceFunctionsInitialized = true;
+  initNavbarDropdownMode();
+  initBonnieCookieSpacing();
+  document.querySelectorAll('.navbar .mobyes > a.linkblock-cta[href="#"]').forEach(link => {
+    link.setAttribute('href', '#zc-action-open');
+    link.setAttribute('data-barba-prevent', 'all');
+  });
+}
+function initBonnieCookieSpacing() {
+  let frame;
+  let cookie;
+  let pending = false;
+  const schedule = () => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => { pending = false; position(); });
+  };
+  const observer = new MutationObserver(schedule);
+  const resize = new ResizeObserver(schedule);
+  function position() {
+    const nextFrame = document.getElementById('bonnie-widget-frame');
+    const nextCookie = document.getElementById('CookiebotWidget');
+    if (nextFrame !== frame || nextCookie !== cookie) {
+      observer.disconnect();
+      resize.disconnect();
+      frame = nextFrame;
+      cookie = nextCookie;
+      [frame, cookie].filter(Boolean).forEach(element => {
+        observer.observe(element, { attributes: true, attributeFilter: ['style', 'class'] });
+        resize.observe(element);
+      });
+    }
+    if (!frame) return;
+    const rect = cookie?.getBoundingClientRect();
+    const visible = rect?.width > 0 && rect?.height > 0 && getComputedStyle(cookie).visibility !== 'hidden';
+    const width = frame.getBoundingClientRect().width;
+    const beside = visible ? rect.right + 8 : 24;
+    const fits = beside + width <= window.innerWidth - 8;
+    const mobile = window.innerWidth <= 767;
+    const collapsed = width <= 80;
+    const left = mobile && visible && collapsed
+      ? Math.max(0, rect.left + (rect.width - width) / 2 + 8)
+      : fits ? beside : Math.max(8, Math.min(24, window.innerWidth - width - 8));
+    const baseBottom = !mobile && visible && collapsed
+      ? Math.max(0, window.innerHeight - rect.bottom + (rect.height - frame.getBoundingClientRect().height) / 2 + 8)
+      : mobile && !collapsed ? 104 : 24;
+    const bottom = visible && (mobile || !fits)
+      ? Math.max(baseBottom, window.innerHeight - rect.top + 12) : baseBottom;
+    for (const [property, value] of [['left', left + 'px'], ['bottom', bottom + 'px']]) {
+      if (frame.style.getPropertyValue(property) !== value) frame.style.setProperty(property, value, 'important');
+    }
+  }
+  // Both vendors inject their widgets asynchronously, outside the Barba container.
+  new MutationObserver(schedule).observe(document.body, { childList: true });
+  window.addEventListener('resize', schedule, { passive: true });
+  position();
+}
+function initNavbarDropdownMode() {
+  const mobile = window.matchMedia('(max-width: 991px)');
+  const dropdowns = Array.from(document.querySelectorAll('.navbar .w-dropdown')).map(element => ({
+    element,
+    hover: element.getAttribute('data-hover'),
+    delay: element.getAttribute('data-delay')
+  }));
+  function applyMode() {
+    dropdowns.forEach(({ element, hover, delay }) => {
+      for (const [name, value] of [
+        ['data-hover', mobile.matches ? 'false' : hover],
+        ['data-delay', mobile.matches ? '0' : delay]
+      ]) {
+        if (value === null) element.removeAttribute(name);
+        else element.setAttribute(name, value);
+      }
+    });
+    // Webflow caches dropdown settings; refresh only this module's handlers.
+    window.Webflow?.require?.('dropdown')?.ready?.();
+  }
+  applyMode();
+  mobile.addEventListener?.('change', applyMode);
 }
 function initBeforeEnterFunctions(next) {
   nextPage = next || document;
 }
 function initAfterEnterFunctions(next) {
   nextPage = next || document;
+  if (reducedMotion) nextPage.querySelectorAll('video[autoplay]').forEach(video => video.pause());
   initCheckSectionThemeScroll(next);
   initNavbarHideOnScroll(next);
   initElfsight(next);
@@ -91,6 +182,7 @@ function initH1Reveal(scope, delay = 0) {
     heading.dataset.h1RevealInit = 'true';
     if (reducedMotion) return;
     const reveal = () => {
+      if (reducedMotion || !heading.isConnected) return;
       const split = new SplitText(heading, { type: 'words,chars', mask: 'chars' });
       gsap.from(split.chars, {
         yPercent: -150,
@@ -227,7 +319,12 @@ function initTableOfContents(scope) {
       if (!text) return;
       headings.push(heading);
     });
-    if (!headings.length) return;
+    if (!headings.length) {
+      listEl.replaceChildren();
+      const sidebar = listEl.closest('.toc-sidebar');
+      if (sidebar) sidebar.hidden = true;
+      return;
+    }
     headings.forEach(heading => {
       if (!heading.id) {
         heading.id = slugify(heading.textContent.trim());
@@ -280,11 +377,11 @@ function initTableOfContents(scope) {
       const id = link.getAttribute('href')?.slice(1);
       const target = document.getElementById(id);
       if (!target) return;
-      if (typeof lenis !== 'undefined' && typeof lenis.scrollTo === 'function') {
+      if (lenis && !reducedMotion && typeof lenis.scrollTo === 'function') {
         lenis.scrollTo(target, { offset: -offset });
       } else {
         const y = target.getBoundingClientRect().top + window.scrollY - offset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
+        window.scrollTo({ top: y, behavior: reducedMotion ? 'instant' : 'smooth' });
       }
     });
     root.dataset.tocInit = 'true';
@@ -319,6 +416,7 @@ function initDisplayReadTime(scope) {
 // -----------------------------------------
 // BARBA HOOKS
 // -----------------------------------------
+barba.hooks.beforeLeave(() => closeNavDropdowns());
 barba.hooks.beforeEnter(data => {
   const parsed = new DOMParser().parseFromString(data.next.html, "text/html");
   const wfPage = parsed.documentElement.getAttribute("data-wf-page");
@@ -326,7 +424,7 @@ barba.hooks.beforeEnter(data => {
   gsap.set(data.next.container, { position: "fixed", top: 0, left: 0, right: 0 });
   if (lenis && typeof lenis.stop === "function") lenis.stop();
   initBeforeEnterFunctions(data.next.container);
-   closeNavDropdowns();
+
  if (_themeScrollCleanup) { _themeScrollCleanup(); _themeScrollCleanup = null; }
   const navTheme = parsed.body.getAttribute("data-theme-nav") || "dark";
   document.body.setAttribute("data-theme-nav", navTheme);
@@ -404,7 +502,7 @@ function applyThemeFrom(pageTheme) {
 function initLenis() {
   if (lenis) return;
   if (!hasLenis) return;
-  lenis = new Lenis({ lerp: 0.08, wheelMultiplier: 0.9 });
+  lenis = new Lenis({ lerp: reducedMotion ? 1 : 0.08, smoothWheel: !reducedMotion, wheelMultiplier: 0.9 });
   if (hasScrollTrigger) lenis.on("scroll", ScrollTrigger.update);
   gsap.ticker.add(time => lenis.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
@@ -480,6 +578,7 @@ function initCheckSectionThemeScroll(scope) {
 // -----------------------------------------
 let _navbarST = null;
 function initNavbarHideOnScroll(scope) {
+  if (reducedMotion) return;
   if (_navbarST) { _navbarST.kill(); _navbarST = null; }
   const navbar = (scope && scope.querySelector(".navbar")) || document.querySelector(".navbar");
   if (!navbar) return;
@@ -514,6 +613,7 @@ function initNavbarHideOnScroll(scope) {
 // DRAGGABLE MARQUEE (scroll-driven direction)
 // -----------------------------------------
 function initDraggableMarquee(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   const wrappers = scope.querySelectorAll("[data-draggable-marquee-init]");
   const getNumberAttr = (el, name, fallback) => {
@@ -616,6 +716,7 @@ function initDraggableMarquee(scope) {
 // -----------------------------------------
 let _middelpuntST = null;
 function initMiddelpuntScroll(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   if (_middelpuntST) { _middelpuntST.kill(); _middelpuntST = null; }
   const section = scope.querySelector('.section-middelpunt');
@@ -640,6 +741,7 @@ function initMiddelpuntScroll(scope) {
 // NAVBAR LINK HOVER (gradient sweep)
 // -----------------------------------------
 function initNavbarLinkHover(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   const links = scope.querySelectorAll('.navbar-link-large');
   links.forEach(link => {
@@ -708,13 +810,13 @@ function initFaqAccordion(scope) {
       isOpen = !isOpen;
       gsap.to(answer, {
         height: isOpen ? 'auto' : 0,
-        duration: 0.5,
+        duration: reducedMotion ? 0 : 0.5,
         ease: isOpen ? 'power2.out' : 'power2.in'
       });
       if (icon) {
         gsap.to(icon, {
           rotation: isOpen ? 180 : 0,
-          duration: 0.5,
+          duration: reducedMotion ? 0 : 0.5,
           ease: isOpen ? 'power2.out' : 'power2.in'
         });
       }
@@ -726,6 +828,7 @@ function initFaqAccordion(scope) {
 // BANKOH LOGO REVEAL
 // -----------------------------------------
 function initLogoReveal(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   const wrapper = scope.querySelector('.bnackup');
   if (!wrapper || wrapper.dataset.logoInit === 'true') return;
@@ -754,6 +857,7 @@ function initLogoReveal(scope) {
 // HIGHLIGHT TEXT ON SCROLL
 // -----------------------------------------
 function initHighlightText(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   const targets = scope.querySelectorAll("[data-highlight-text]");
   targets.forEach((heading) => {
@@ -790,6 +894,7 @@ function initHighlightText(scope) {
 // -----------------------------------------
 let _parallaxMM = null;
 function initGlobalParallax(scope) {
+  if (reducedMotion) return;
   scope = scope || document;
   if (_parallaxMM) { _parallaxMM.revert(); _parallaxMM = null; }
   _parallaxMM = gsap.matchMedia();
@@ -836,3 +941,51 @@ function initGlobalParallax(scope) {
     });
   });
 }
+
+// Respond to a change in the visitor's motion preference.
+const bankohMotionMedia = gsap.matchMedia();
+bankohMotionMedia.add({
+  reduce: "(prefers-reduced-motion: reduce)",
+  normal: "(prefers-reduced-motion: no-preference)"
+}, context => {
+  reducedMotion = context.conditions.reduce;
+  if (lenis) {
+    lenis.options.smoothWheel = !reducedMotion;
+    lenis.options.lerp = reducedMotion ? 1 : 0.08;
+  }
+  if (!reducedMotion) return;
+  document.documentElement.classList.remove("js-logo");
+  const motionTargets = document.querySelectorAll(
+    '.bnackup path[data-letter], .heading-style-h1 *, [data-highlight-text] *, [data-parallax="target"], [data-draggable-marquee-collection], .middelpunt-image, .navbar'
+  );
+  gsap.getTweensOf(motionTargets).forEach(tween => {
+    if (tween.repeat() !== -1) tween.progress(1);
+    tween.kill();
+  });
+  ScrollTrigger.getAll().forEach(trigger => {
+    if (trigger === _navbarST || trigger.trigger?.matches(
+      '.section-middelpunt, [data-highlight-text], [data-parallax="trigger"], [data-draggable-marquee-init]'
+    )) trigger.kill();
+  });
+  document.querySelectorAll("video[autoplay]").forEach(video => video.pause());
+});
+
+(function () {
+  function applyHeroPoster(scope) {
+    scope.querySelectorAll('.header7_background-video[data-poster-url]').forEach(function (wrapper) {
+      var video = wrapper.querySelector('video');
+      var poster = wrapper.getAttribute('data-poster-url');
+      if (video && poster && !video.hasAttribute('poster')) {
+        video.setAttribute('poster', poster);
+      }
+    });
+  }
+  applyHeroPoster(document);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { applyHeroPoster(document); }, { once: true });
+  }
+  if (window.barba && window.barba.hooks) {
+    window.barba.hooks.beforeEnter(function (data) { applyHeroPoster(data.next.container); });
+  }
+})();
+
